@@ -509,7 +509,7 @@ By default, this web page only works on the same computer running the bot. If yo
 
 | Panel | What it shows you |
 |-------|-------------------|
-| **Scheduled Tasks** | Every task you've set up. Shows whether it's running or paused, when it will run next (with a live countdown), and what happened last time it ran. Tap a task to expand the details. |
+| **Scheduled Tasks** | Every task you've set up. Shows whether it's running or paused, when it will run next (with a live countdown), and what happened last time it ran. Tap to expand details. Pause, resume, or delete tasks directly from the dashboard. |
 | **Memory Landscape** | How many things your assistant remembers, broken down by type. Tap the numbers to browse individual memories. Shows which memories are fading (used less often) and which ones come up the most. Includes a chart of how many new memories were created over the past month. |
 | **System Health** | A visual meter showing how full the conversation window is (green = plenty of room, yellow = getting full, red = almost out). Also shows how long the current session has been running, whether Telegram, WhatsApp and Slack are connected, and the bot's username. |
 | **Tokens & Cost** | How much you've spent today and all-time. A chart showing daily costs over the past month. A donut chart showing how efficiently the system is using cached data (higher = cheaper). |
