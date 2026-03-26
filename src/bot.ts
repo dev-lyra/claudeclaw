@@ -1086,7 +1086,7 @@ export function createBot(): Bot {
     const chatIdStr = ctx.chat!.id.toString();
     const base = DASHBOARD_URL || `http://localhost:${DASHBOARD_PORT}`;
     const url = `${base}/?token=${DASHBOARD_TOKEN}&chatId=${chatIdStr}`;
-    await ctx.reply(`<a href="${url}">Open Dashboard</a>`, { parse_mode: 'HTML' });
+    await ctx.reply(`Open Dashboard:\n${url}`);
   });
 
   // /stop — interrupt the current agent query
