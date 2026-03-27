@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { Api, Bot, Context, InputFile, RawApi } from 'grammy';
+import { Api, Bot, Context, InlineKeyboard, InputFile, RawApi } from 'grammy';
 
 import { runAgent, UsageInfo, AgentProgressEvent } from './agent.js';
 import {
@@ -1086,7 +1086,18 @@ export function createBot(): Bot {
     const chatIdStr = ctx.chat!.id.toString();
     const base = DASHBOARD_URL || `http://localhost:${DASHBOARD_PORT}`;
     const url = `${base}/?token=${DASHBOARD_TOKEN}&chatId=${chatIdStr}`;
-    await ctx.reply(`Open Dashboard:\n${url}`);
+
+    if (DASHBOARD_URL) {
+      // Public URL: use inline keyboard button (tappable in Telegram)
+      const keyboard = new InlineKeyboard().url('Open Dashboard', url);
+      await ctx.reply('Tap to open:', { reply_markup: keyboard });
+    } else {
+      // Localhost: wrap URL in <code> for easy select/copy on desktop and mobile
+      await ctx.reply(
+        `Dashboard (local):\n\n<code>${url}</code>\n\nTap or select to copy. Set DASHBOARD_URL in .env for a tappable link.`,
+        { parse_mode: 'HTML' },
+      );
+    }
   });
 
   // /stop — interrupt the current agent query
