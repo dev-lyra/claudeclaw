@@ -1175,9 +1175,13 @@ export function createBot(): Bot {
     const base = DASHBOARD_URL || `http://localhost:${DASHBOARD_PORT}`;
     const url = `${base}/?token=${DASHBOARD_TOKEN}&chatId=${chatIdStr}`;
 
-    const { InlineKeyboard } = await import('grammy');
-    const keyboard = new InlineKeyboard().url('Open Dashboard', url);
-    await ctx.reply('Dashboard', { reply_markup: keyboard });
+    if (DASHBOARD_URL && DASHBOARD_URL.startsWith('https://')) {
+      const { InlineKeyboard } = await import('grammy');
+      const keyboard = new InlineKeyboard().url('Open Dashboard', url);
+      await ctx.reply('Dashboard', { reply_markup: keyboard });
+    } else {
+      await ctx.reply(`Dashboard:\n\n<code>${url}</code>`, { parse_mode: 'HTML' });
+    }
   });
 
   // /stop — interrupt the current agent query

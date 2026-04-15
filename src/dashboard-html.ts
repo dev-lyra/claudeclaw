@@ -211,7 +211,7 @@ const WARROOM_ENABLED = warroomEnabled;
 </div>
 
 <!-- War Room Quick Access (only shown when WARROOM_ENABLED) -->
-${WARROOM_ENABLED ? `<div class="card" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;border:1px solid #1e3a5f;background:linear-gradient(135deg,#0f172a 0%,#1a1a1a 100%)" onclick="window.location.href='/warroom?token=${token}&chatId=${chatId}'">
+${WARROOM_ENABLED ? `<div class="card" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;border:1px solid #1e3a5f;background:linear-gradient(135deg,#0f172a 0%,#1a1a1a 100%)" onclick="window.open('/warroom?token=${token}&chatId=${chatId}','_blank')">
   <div>
     <div style="font-size:14px;font-weight:600;color:#60a5fa">War Room</div>
     <div style="font-size:12px;color:#6b7280;margin-top:2px">Voice standup with your agent team</div>

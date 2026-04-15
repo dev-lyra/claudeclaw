@@ -194,7 +194,9 @@ export function startDashboard(botApi?: Api<RawApi>): void {
   // Serve War Room agent avatars
   app.get('/warroom-avatar/:id', (c) => {
     const agentId = c.req.param('id').replace(/[^a-z0-9_-]/g, '');
-    const avatarPath = path.join(PROJECT_ROOT, 'warroom', 'avatars', `${agentId}.png`);
+    const source = c.req.query('variant') || 'default';
+    const filename = source === 'meet' ? `${agentId}-meet.png` : `${agentId}.png`;
+    const avatarPath = path.join(PROJECT_ROOT, 'warroom', 'avatars', filename);
     if (!fs.existsSync(avatarPath)) return c.text('', 404);
     const data = fs.readFileSync(avatarPath);
     return new Response(data, {
