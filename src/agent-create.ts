@@ -300,6 +300,15 @@ function generateLaunchdPlist(agentId: string): string {
   const label = `com.claudeclaw.${agentId}`;
   const plistPath = path.join(plistDir, `${label}.plist`);
 
+  // Use the same Node binary that's running this process (works with nvm, homebrew, or system node)
+  const nodePath = process.execPath;
+  const nodeBinDir = path.dirname(nodePath);
+
+  // Build PATH: node's bin dir first, then standard system paths
+  const systemPaths = ['/opt/homebrew/bin', '/opt/homebrew/sbin', '/usr/local/bin', '/usr/bin', '/bin', '/usr/sbin', '/sbin'];
+  const allPaths = [nodeBinDir, ...systemPaths.filter(p => p !== nodeBinDir)];
+  const envPath = allPaths.join(':');
+
   const plist = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -308,7 +317,7 @@ function generateLaunchdPlist(agentId: string): string {
   <string>${label}</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/opt/homebrew/bin/node</string>
+    <string>${nodePath}</string>
     <string>dist/index.js</string>
     <string>--agent</string>
     <string>${agentId}</string>
@@ -317,8 +326,10 @@ function generateLaunchdPlist(agentId: string): string {
   <string>__PROJECT_DIR__</string>
   <key>EnvironmentVariables</key>
   <dict>
+    <key>NODE_ENV</key>
+    <string>production</string>
     <key>PATH</key>
-    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <string>${envPath}</string>
     <key>HOME</key>
     <string>__HOME__</string>
   </dict>
@@ -347,14 +358,17 @@ function generateSystemdUnit(agentId: string): string {
   const serviceName = `com.claudeclaw.agent-${agentId}`;
   const unitPath = path.join(unitDir, `${serviceName}.service`);
 
+  const nodePath = process.execPath;
+
   const unit = `[Unit]
 Description=ClaudeClaw Agent: ${agentId}
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/node ${PROJECT_ROOT}/dist/index.js --agent ${agentId}
+ExecStart=${nodePath} ${PROJECT_ROOT}/dist/index.js --agent ${agentId}
 WorkingDirectory=${PROJECT_ROOT}
+Environment=NODE_ENV=production
 Restart=always
 RestartSec=10
 
@@ -375,6 +389,9 @@ export interface ActivationResult {
 }
 
 export function activateAgent(agentId: string): ActivationResult {
+  if (!VALID_ID_RE.test(agentId)) {
+    return { ok: false, error: `Invalid agent ID format: ${agentId}` };
+  }
   try {
     if (os.platform() === 'darwin') {
       return activateLaunchd(agentId);
@@ -451,6 +468,9 @@ function activateSystemd(agentId: string): ActivationResult {
 }
 
 export function deactivateAgent(agentId: string): { ok: boolean; error?: string } {
+  if (!VALID_ID_RE.test(agentId)) {
+    return { ok: false, error: `Invalid agent ID format: ${agentId}` };
+  }
   try {
     if (os.platform() === 'darwin') {
       const label = `com.claudeclaw.${agentId}`;
@@ -490,6 +510,9 @@ export function deactivateAgent(agentId: string): { ok: boolean; error?: string 
 // ── Delete ───────────────────────────────────────────────────────────
 
 export function deleteAgent(agentId: string): { ok: boolean; error?: string } {
+  if (!VALID_ID_RE.test(agentId)) {
+    return { ok: false, error: `Invalid agent ID format: ${agentId}` };
+  }
   // Deactivate first
   deactivateAgent(agentId);
 
@@ -542,6 +565,43 @@ export function pickAgentColor(existingCount: number): string {
 }
 
 /** Check if an agent process is currently running. */
+/**
+ * Restart an agent by deactivating then reactivating its service.
+ * Works on both macOS (launchd) and Linux (systemd).
+ */
+export function restartAgent(agentId: string): { ok: boolean; error?: string } {
+  // Validate agent ID format to prevent shell injection
+  if (!VALID_ID_RE.test(agentId)) {
+    return { ok: false, error: `Invalid agent ID format: ${agentId}` };
+  }
+  try {
+    if (os.platform() === 'darwin') {
+      const label = `com.claudeclaw.${agentId}`;
+      const destPlist = path.join(os.homedir(), 'Library', 'LaunchAgents', `${label}.plist`);
+      if (!fs.existsSync(destPlist)) {
+        return { ok: false, error: `Agent ${agentId} is not installed (no plist found)` };
+      }
+      const uid = os.userInfo().uid;
+      try {
+        execSync(`launchctl kickstart -k gui/${uid}/${label}`, { stdio: 'ignore' });
+      } catch {
+        try { execSync(`launchctl unload "${destPlist}"`, { stdio: 'ignore' }); } catch { /* ok */ }
+        execSync(`launchctl load "${destPlist}"`);
+      }
+      logger.info({ agentId }, 'Agent restarted (launchd)');
+      return { ok: true };
+    } else if (os.platform() === 'linux') {
+      const serviceName = `com.claudeclaw.agent-${agentId}`;
+      execSync(`systemctl --user restart "${serviceName}"`, { stdio: 'ignore' });
+      logger.info({ agentId }, 'Agent restarted (systemd)');
+      return { ok: true };
+    }
+    return { ok: false, error: `Unsupported platform: ${os.platform()}` };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 export function isAgentRunning(agentId: string): boolean {
   const pidFile = path.join(STORE_DIR, `agent-${agentId}.pid`);
   if (!fs.existsSync(pidFile)) return false;
