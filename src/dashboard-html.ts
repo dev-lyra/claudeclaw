@@ -224,12 +224,17 @@ ${WARROOM_ENABLED ? `<div class="card" style="border:1px solid #1e3a5f">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
     <div>
       <div style="font-size:14px;font-weight:600;color:#a5b4fc">War Room Voices</div>
-      <div style="font-size:11px;color:#6b7280;margin-top:2px">Per-agent Gemini Live voice config. Main keeps Charon unless you change it.</div>
+      <div id="voicesSubtitle" style="font-size:11px;color:#6b7280;margin-top:2px">Per-agent voice config.</div>
     </div>
     <div style="display:flex;gap:8px">
       <button id="voicesSaveBtn" onclick="saveVoices()" disabled style="background:#374151;color:#9ca3af;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:not-allowed">Save</button>
       <button id="voicesApplyBtn" onclick="applyVoices()" style="background:#4f46e5;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer">Save &amp; Apply</button>
     </div>
+  </div>
+  <div id="engineToggle" style="display:flex;gap:6px;margin-bottom:12px">
+    <button class="engine-btn active" data-engine="live" onclick="setVoiceEngine('live')" style="flex:1;padding:6px 0;border-radius:6px;border:1px solid #374151;background:#1a1a1a;color:#9ca3af;font-size:11px;font-weight:600;cursor:pointer">Gemini Live</button>
+    <button class="engine-btn" data-engine="elevenlabs" onclick="setVoiceEngine('elevenlabs')" style="flex:1;padding:6px 0;border-radius:6px;border:1px solid #374151;background:#1a1a1a;color:#9ca3af;font-size:11px;font-weight:600;cursor:pointer">ElevenLabs</button>
+    <button class="engine-btn" data-engine="legacy" onclick="setVoiceEngine('legacy')" style="flex:1;padding:6px 0;border-radius:6px;border:1px solid #374151;background:#1a1a1a;color:#9ca3af;font-size:11px;font-weight:600;cursor:pointer">Legacy</button>
   </div>
   <div id="voicesRows" style="display:flex;flex-direction:column;gap:6px">
     <div style="font-size:11px;color:#6b7280;padding:8px 0">Loading voices...</div>
@@ -1067,53 +1072,110 @@ document.addEventListener('click', function(e) {
 
 // ── War Room voice config ────────────────────────────────────────────
 // State lives on window so the edit tracking survives refreshAgents() cycles.
-window.__voicesState = { loaded: false, rows: [], catalog: [], dirty: new Set() };
+window.__voicesState = { loaded: false, rows: [], gemini_catalog: [], elevenlabs_catalog: [], dirty: new Set(), engine: 'live' };
 
 async function loadVoices() {
   const rowsEl = document.getElementById('voicesRows');
   if (!rowsEl) return;
   try {
-    const data = await api('/api/warroom/voices');
+    var data = await api('/api/warroom/voices');
     if (!data || !data.ok) throw new Error((data && data.error) || 'failed');
     window.__voicesState.rows = data.voices;
-    window.__voicesState.catalog = data.gemini_catalog;
+    window.__voicesState.gemini_catalog = data.gemini_catalog || [];
+    window.__voicesState.elevenlabs_catalog = data.elevenlabs_catalog || [];
     window.__voicesState.dirty = new Set();
     window.__voicesState.loaded = true;
+    // Load current engine from pin state
+    var pinData = await api('/api/warroom/pin');
+    if (pinData && pinData.ok && pinData.engine) {
+      window.__voicesState.engine = pinData.engine;
+    }
+    updateEngineToggle();
     renderVoices();
   } catch (err) {
     rowsEl.innerHTML = '<div style="font-size:11px;color:#ef4444;padding:8px 0">Failed to load voices: ' + String(err).replace(/</g,'&lt;') + '</div>';
   }
 }
 
+function updateEngineToggle() {
+  var engine = window.__voicesState.engine;
+  var btns = document.querySelectorAll('#engineToggle button');
+  btns.forEach(function(btn) {
+    var isActive = btn.getAttribute('data-engine') === engine;
+    btn.style.background = isActive ? '#4f46e5' : '#1a1a1a';
+    btn.style.color = isActive ? '#fff' : '#9ca3af';
+    btn.style.borderColor = isActive ? '#4f46e5' : '#374151';
+  });
+  var subtitle = document.getElementById('voicesSubtitle');
+  if (subtitle) {
+    var labels = { live: 'Gemini Live voices (speech-to-speech)', elevenlabs: 'ElevenLabs voices (STT + LLM + TTS)', legacy: 'Legacy Cartesia voices' };
+    subtitle.textContent = labels[engine] || 'Per-agent voice config.';
+  }
+}
+
+async function setVoiceEngine(engine) {
+  window.__voicesState.engine = engine;
+  updateEngineToggle();
+  renderVoices();
+  // Write engine to pin file (no restart needed until Save & Apply)
+  var statusEl = document.getElementById('voicesStatus');
+  try {
+    await fetch(BASE + '/api/warroom/pin?token=' + TOKEN, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ engine: engine, restart: false }),
+    });
+    statusEl.style.color = '#10b981';
+    statusEl.textContent = 'Engine set to ' + engine + '. Click "Save & Apply" to activate.';
+  } catch (err) {
+    statusEl.style.color = '#ef4444';
+    statusEl.textContent = 'Failed to set engine: ' + String(err);
+  }
+}
+
 function renderVoices() {
-  const rowsEl = document.getElementById('voicesRows');
+  var rowsEl = document.getElementById('voicesRows');
   if (!rowsEl) return;
-  const { rows, catalog, dirty } = window.__voicesState;
-  const html = rows.map(function(r) {
-    const opts = catalog.map(function(v) {
-      const selected = v.name === r.gemini_voice ? ' selected' : '';
-      return '<option value="' + v.name + '"' + selected + '>' + v.name + ' (' + v.style + ')</option>';
-    }).join('');
-    const isDirty = dirty.has(r.agent);
-    const borderColor = isDirty ? '#6366f1' : 'rgba(255,255,255,0.05)';
-    const defaultBadge = r.is_default
-      ? '<span style="font-size:9px;color:#6b7280;margin-left:6px;padding:1px 5px;border:1px solid #374151;border-radius:3px">default</span>'
-      : '';
-    const dirtyBadge = isDirty
+  var state = window.__voicesState;
+  var engine = state.engine;
+  var rows = state.rows;
+  var dirty = state.dirty;
+
+  var html = rows.map(function(r) {
+    var opts = '';
+    if (engine === 'elevenlabs') {
+      opts = state.elevenlabs_catalog.map(function(v) {
+        var selected = v.id === r.elevenlabs_voice ? ' selected' : '';
+        return '<option value="' + v.id + '"' + selected + '>' + v.name + ' (' + v.accent + ', ' + v.style + ')</option>';
+      }).join('');
+    } else if (engine === 'legacy') {
+      // Legacy uses voice_id (Cartesia) - show as text input
+      opts = '<input data-agent="' + r.agent + '" data-field="voice_id" value="' + (r.voice_id || '') + '" onchange="onVoiceChange(this)" style="flex:1;max-width:280px;background:#0f172a;color:#e5e7eb;border:1px solid #1e293b;border-radius:4px;padding:4px 8px;font-size:12px;font-family:inherit" placeholder="Cartesia voice ID">';
+    } else {
+      opts = state.gemini_catalog.map(function(v) {
+        var selected = v.name === r.gemini_voice ? ' selected' : '';
+        return '<option value="' + v.name + '"' + selected + '>' + v.name + ' (' + v.style + ')</option>';
+      }).join('');
+    }
+    var isDirty = dirty.has(r.agent);
+    var borderColor = isDirty ? '#6366f1' : 'rgba(255,255,255,0.05)';
+    var dirtyBadge = isDirty
       ? '<span style="font-size:9px;color:#818cf8;margin-left:6px;padding:1px 5px;border:1px solid #4f46e5;border-radius:3px;background:rgba(79,70,229,0.1)">unsaved</span>'
       : '';
+    var selectHtml = engine === 'legacy'
+      ? opts
+      : '<select data-agent="' + r.agent + '" data-field="' + (engine === 'elevenlabs' ? 'elevenlabs_voice' : 'gemini_voice') + '" onchange="onVoiceChange(this)" style="flex:1;max-width:280px;background:#0f172a;color:#e5e7eb;border:1px solid #1e293b;border-radius:4px;padding:4px 8px;font-size:12px;font-family:inherit">' + opts + '</select>';
     return (
       '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid ' + borderColor + ';border-radius:6px">' +
-        '<div style="width:80px;font-size:12px;font-weight:600;color:#d1d5db;text-transform:uppercase;letter-spacing:0.5px">' + r.agent + defaultBadge + dirtyBadge + '</div>' +
-        '<select data-agent="' + r.agent + '" onchange="onVoiceChange(this)" style="flex:1;max-width:280px;background:#0f172a;color:#e5e7eb;border:1px solid #1e293b;border-radius:4px;padding:4px 8px;font-size:12px;font-family:inherit">' + opts + '</select>' +
+        '<div style="width:80px;font-size:12px;font-weight:600;color:#d1d5db;text-transform:uppercase;letter-spacing:0.5px">' + r.agent + dirtyBadge + '</div>' +
+        selectHtml +
         '<div style="flex:1;min-width:0;font-size:10px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (r.name || '') + '</div>' +
       '</div>'
     );
   }).join('');
   rowsEl.innerHTML = html || '<div style="font-size:11px;color:#6b7280;padding:8px 0">No agents found.</div>';
 
-  // Save button enabled only when there are dirty changes
-  const saveBtn = document.getElementById('voicesSaveBtn');
+  var saveBtn = document.getElementById('voicesSaveBtn');
   if (saveBtn) {
     if (dirty.size > 0) {
       saveBtn.disabled = false;
@@ -1129,39 +1191,39 @@ function renderVoices() {
   }
 }
 
-function onVoiceChange(sel) {
-  const agent = sel.getAttribute('data-agent');
-  const newVoice = sel.value;
-  const row = window.__voicesState.rows.find(function(r) { return r.agent === agent; });
+function onVoiceChange(el) {
+  var agent = el.getAttribute('data-agent');
+  var field = el.getAttribute('data-field') || 'gemini_voice';
+  var newValue = el.value;
+  var row = window.__voicesState.rows.find(function(r) { return r.agent === agent; });
   if (!row) return;
-  row.gemini_voice = newVoice;
+  row[field] = newValue;
   row.is_default = false;
   window.__voicesState.dirty.add(agent);
   renderVoices();
 }
 
 async function saveVoices(applyAfter) {
-  const { rows, dirty } = window.__voicesState;
-  if (dirty.size === 0 && !applyAfter) return;
-  const updates = rows
-    .filter(function(r) { return dirty.has(r.agent) || applyAfter; })
-    .map(function(r) { return { agent: r.agent, gemini_voice: r.gemini_voice }; });
-  const statusEl = document.getElementById('voicesStatus');
+  var state = window.__voicesState;
+  if (state.dirty.size === 0 && !applyAfter) return;
+  var updates = state.rows
+    .filter(function(r) { return state.dirty.has(r.agent) || applyAfter; })
+    .map(function(r) { return { agent: r.agent, gemini_voice: r.gemini_voice, elevenlabs_voice: r.elevenlabs_voice, voice_id: r.voice_id }; });
+  var statusEl = document.getElementById('voicesStatus');
   statusEl.style.color = '#6b7280';
   statusEl.textContent = 'Saving...';
   try {
-    const res = await fetch(BASE + '/api/warroom/voices?token=' + TOKEN, {
+    var res = await fetch(BASE + '/api/warroom/voices?token=' + TOKEN, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ updates: updates }),
     });
-    const data = await res.json();
+    var data = await res.json();
     if (!data.ok) throw new Error(data.error || 'save failed');
     window.__voicesState.dirty = new Set();
     statusEl.style.color = '#10b981';
     statusEl.textContent = applyAfter ? 'Saved. Applying...' : 'Saved. Use "Save & Apply" to activate now.';
     if (applyAfter) return true;
-    // Re-render so dirty badges clear
     renderVoices();
   } catch (err) {
     statusEl.style.color = '#ef4444';
@@ -1171,17 +1233,15 @@ async function saveVoices(applyAfter) {
 }
 
 async function applyVoices() {
-  // Save any pending edits first, then kickstart main so warroom respawns
-  const statusEl = document.getElementById('voicesStatus');
-  const saveOk = await saveVoices(true);
+  var statusEl = document.getElementById('voicesStatus');
+  var saveOk = await saveVoices(true);
   if (saveOk === false) return;
   try {
-    const res = await fetch(BASE + '/api/warroom/voices/apply?token=' + TOKEN, { method: 'POST' });
-    const data = await res.json();
+    var res = await fetch(BASE + '/api/warroom/voices/apply?token=' + TOKEN, { method: 'POST' });
+    var data = await res.json();
     if (!data.ok) throw new Error(data.error || 'apply failed');
     statusEl.style.color = '#10b981';
     statusEl.textContent = 'Applied. War Room will be back up in ~7s.';
-    // Re-load after main has restarted so we see the new server-side state
     setTimeout(function() { loadVoices(); }, 8000);
   } catch (err) {
     statusEl.style.color = '#ef4444';

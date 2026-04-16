@@ -416,80 +416,16 @@ async def answer_as_agent_handler(params):
     }, properties=silent)
 
 
-# ─── Mode 1: Gemini Live (speech-to-speech + tools) ────────────────────────
+# ─── Shared tool schemas ───────────────────────────────────────────────────
 
-# Shared with the dashboard — any HTTP POST to /api/warroom/pin writes here.
-PIN_PATH = Path("/tmp/warroom-pin.json")
+def build_tool_schemas(active_mode: str):
+    """Build tool schemas shared across live and elevenlabs modes.
 
-VALID_MODES = {"direct", "auto"}
-
-
-def read_pin_state() -> tuple[str, str]:
-    """Return (agent, mode) tuple from the pin file.
-
-    Defaults to ("main", "direct") if the file is missing or malformed.
-    The Pipecat server reads this on startup to decide which agent's
-    voice, persona, and tool set to load. Changing either field requires
-    a respawn (handled by the dashboard's /api/warroom/pin endpoint).
+    Returns (ToolsSchema, list_of_standard_tools).
     """
-    if not PIN_PATH.exists():
-        return "main", "direct"
-    try:
-        with open(PIN_PATH, "r") as f:
-            data = json.load(f)
-        if not isinstance(data, dict):
-            return "main", "direct"
-        agent = data.get("agent")
-        if not isinstance(agent, str) or agent not in VALID_AGENTS:
-            agent = "main"
-        mode = data.get("mode")
-        if not isinstance(mode, str) or mode not in VALID_MODES:
-            mode = "direct"
-        return agent, mode
-    except (OSError, json.JSONDecodeError, ValueError):
-        return "main", "direct"
-
-
-def read_pinned_agent() -> str:
-    """Back-compat wrapper: return just the agent id."""
-    agent, _ = read_pin_state()
-    return agent
-
-
-async def run_live_mode():
-    """Gemini Live native-audio pipeline with tool calling."""
-    from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService
-    from pipecat.processors.aggregators.llm_context import LLMContext
-    from pipecat.processors.aggregators.llm_response_universal import LLMContextAggregatorPair
     from pipecat.adapters.schemas.function_schema import FunctionSchema
     from pipecat.adapters.schemas.tools_schema import ToolsSchema
-    from pipecat.frames.frames import LLMContextFrame
-    from personas import get_persona
 
-    check_required_keys({"GOOGLE_API_KEY": "Google AI (Gemini Live native audio)"})
-
-    port = int(os.environ.get("WARROOM_PORT", "7860"))
-    model = os.environ.get("WARROOM_LIVE_MODEL")  # None = use Pipecat's default
-
-    # Determine which agent + mode is active. Defaults: ("main", "direct").
-    # If the user has clicked an agent card or a mode button on the
-    # dashboard, /api/warroom/pin wrote both fields here and then killed
-    # the warroom subprocess so this fresh process picks up the new pin.
-    active_agent, active_mode = read_pin_state()
-    logger.info("Active agent=%s mode=%s", active_agent, active_mode)
-
-    # In auto mode, voice comes from main (Gemini is the front desk,
-    # agents answer through it verbatim so they all sound the same
-    # until v2 session pooling lands).
-    voice_agent = "main" if active_mode == "auto" else active_agent
-    active_entry = AGENT_VOICES.get(voice_agent) or AGENT_VOICES.get("main", {})
-    configured_voice = active_entry.get("gemini_voice") or "Charon"
-    voice = os.environ.get("WARROOM_LIVE_VOICE", configured_voice)
-    system_prompt = get_persona(active_agent, mode=active_mode)
-
-    transport = make_transport(port)
-
-    # Define the toolset Gemini can call ----------------------------------
     delegate_schema = FunctionSchema(
         name="delegate_to_agent",
         description=(
@@ -536,9 +472,6 @@ async def run_live_mode():
         required=[],
     )
 
-    # answer_as_agent is only registered in auto mode. In direct mode,
-    # Gemini should not be routing calls away from the pinned agent —
-    # the pinned agent IS the one answering, via its own persona.
     standard_tools = [delegate_schema, get_time_schema, list_agents_schema]
     if active_mode == "auto":
         answer_schema = FunctionSchema(
@@ -565,10 +498,96 @@ async def run_live_mode():
         )
         standard_tools.append(answer_schema)
 
-    tools = ToolsSchema(standard_tools=standard_tools)
+    return ToolsSchema(standard_tools=standard_tools), standard_tools
 
-    # Seed the LLM context with an empty message list + tools. Gemini Live
-    # uses the tools from the context, not from the service constructor.
+
+def register_tool_handlers(llm, active_mode: str):
+    """Register tool handlers on any Pipecat LLM service."""
+    llm.register_function("delegate_to_agent", delegate_to_agent_handler)
+    llm.register_function("get_time", get_time_handler)
+    llm.register_function("list_agents", list_agents_handler)
+    if active_mode == "auto":
+        llm.register_function("answer_as_agent", answer_as_agent_handler)
+
+
+# ─── Mode 1: Gemini Live (speech-to-speech + tools) ────────────────────────
+
+# Shared with the dashboard — any HTTP POST to /api/warroom/pin writes here.
+PIN_PATH = Path("/tmp/warroom-pin.json")
+
+VALID_MODES = {"direct", "auto"}
+VALID_ENGINES = {"live", "elevenlabs", "legacy"}
+
+
+def read_pin_state() -> tuple[str, str, str]:
+    """Return (agent, mode, engine) tuple from the pin file.
+
+    Defaults to ("main", "direct", "live") if the file is missing or malformed.
+    The Pipecat server reads this on startup to decide which agent's
+    voice, persona, and tool set to load. Changing any field requires
+    a respawn (handled by the dashboard's /api/warroom/pin endpoint).
+    """
+    if not PIN_PATH.exists():
+        return "main", "direct", "live"
+    try:
+        with open(PIN_PATH, "r") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            return "main", "direct", "live"
+        agent = data.get("agent")
+        if not isinstance(agent, str) or agent not in VALID_AGENTS:
+            agent = "main"
+        mode = data.get("mode")
+        if not isinstance(mode, str) or mode not in VALID_MODES:
+            mode = "direct"
+        engine = data.get("engine")
+        if not isinstance(engine, str) or engine not in VALID_ENGINES:
+            engine = "live"
+        return agent, mode, engine
+    except (OSError, json.JSONDecodeError, ValueError):
+        return "main", "direct", "live"
+
+
+def read_pinned_agent() -> str:
+    """Back-compat wrapper: return just the agent id."""
+    agent, _, _ = read_pin_state()
+    return agent
+
+
+async def run_live_mode():
+    """Gemini Live native-audio pipeline with tool calling."""
+    from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService
+    from pipecat.processors.aggregators.llm_context import LLMContext
+    from pipecat.processors.aggregators.llm_response_universal import LLMContextAggregatorPair
+    from pipecat.adapters.schemas.function_schema import FunctionSchema
+    from pipecat.adapters.schemas.tools_schema import ToolsSchema
+    from pipecat.frames.frames import LLMContextFrame
+    from personas import get_persona
+
+    check_required_keys({"GOOGLE_API_KEY": "Google AI (Gemini Live native audio)"})
+
+    port = int(os.environ.get("WARROOM_PORT", "7860"))
+    model = os.environ.get("WARROOM_LIVE_MODEL")  # None = use Pipecat's default
+
+    # Determine which agent + mode is active. Defaults: ("main", "direct").
+    # If the user has clicked an agent card or a mode button on the
+    # dashboard, /api/warroom/pin wrote both fields here and then killed
+    # the warroom subprocess so this fresh process picks up the new pin.
+    active_agent, active_mode, _ = read_pin_state()
+    logger.info("Active agent=%s mode=%s", active_agent, active_mode)
+
+    # In auto mode, voice comes from main (Gemini is the front desk,
+    # agents answer through it verbatim so they all sound the same
+    # until v2 session pooling lands).
+    voice_agent = "main" if active_mode == "auto" else active_agent
+    active_entry = AGENT_VOICES.get(voice_agent) or AGENT_VOICES.get("main", {})
+    configured_voice = active_entry.get("gemini_voice") or "Charon"
+    voice = os.environ.get("WARROOM_LIVE_VOICE", configured_voice)
+    system_prompt = get_persona(active_agent, mode=active_mode)
+
+    transport = make_transport(port)
+
+    tools, standard_tools = build_tool_schemas(active_mode)
     context = LLMContext(messages=[], tools=tools)
 
     # Build the service -----------------------------------------------------
@@ -582,21 +601,11 @@ async def run_live_mode():
     )
     if model:
         live_kwargs["model"] = model
-    # Always pass voice_id so the configured agent voice takes effect,
-    # even for main (Charon). Pipecat only warns about deprecation, not
-    # actively breaks.
-    live_kwargs["voice_id"] = voice
+    live_kwargs["settings"] = GeminiLiveLLMService.Settings(voice=voice)
 
     llm = GeminiLiveLLMService(**live_kwargs)
 
-    # Register the tool handlers. register_function binds a Python async
-    # callable to a named function on the LLM side; when Gemini emits a
-    # tool_call Pipecat calls our handler with FunctionCallParams.
-    llm.register_function("delegate_to_agent", delegate_to_agent_handler)
-    llm.register_function("get_time", get_time_handler)
-    llm.register_function("list_agents", list_agents_handler)
-    if active_mode == "auto":
-        llm.register_function("answer_as_agent", answer_as_agent_handler)
+    register_tool_handlers(llm, active_mode)
 
     # Context aggregator pair. This is the piece that was missing before —
     # it routes user speech / Gemini responses into the LLMContext and
@@ -718,20 +727,115 @@ async def run_legacy_mode():
     logger.info("War Room session ended.")
 
 
+# ─── Mode 3: ElevenLabs TTS (Deepgram STT + Gemini text LLM + ElevenLabs) ─
+
+async def run_elevenlabs_mode():
+    """Deepgram STT -> Gemini text LLM (with tools) -> ElevenLabs TTS pipeline."""
+    from pipecat.services.deepgram.stt import DeepgramSTTService
+    from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
+    from pipecat.services.google.llm import GoogleLLMService
+    from pipecat.processors.aggregators.llm_context import LLMContext
+    from pipecat.processors.aggregators.llm_response_universal import LLMContextAggregatorPair
+    from pipecat.frames.frames import LLMContextFrame
+    from pipecat.audio.vad.silero import SileroVADAnalyzer
+    from personas import get_persona
+
+    check_required_keys({
+        "GOOGLE_API_KEY": "Google AI (Gemini text LLM)",
+        "DEEPGRAM_API_KEY": "Deepgram (speech-to-text)",
+        "ELEVENLABS_API_KEY": "ElevenLabs (text-to-speech)",
+    })
+
+    port = int(os.environ.get("WARROOM_PORT", "7860"))
+
+    active_agent, active_mode, _ = read_pin_state()
+    logger.info("ElevenLabs mode: agent=%s mode=%s", active_agent, active_mode)
+
+    voice_agent = "main" if active_mode == "auto" else active_agent
+    active_entry = AGENT_VOICES.get(voice_agent) or AGENT_VOICES.get("main", {})
+    elevenlabs_voice_id = active_entry.get("elevenlabs_voice") or "pNInz6obpgDQGcFmaJgB"
+    system_prompt = get_persona(active_agent, mode=active_mode)
+
+    transport = make_transport(port)
+
+    tools, standard_tools = build_tool_schemas(active_mode)
+
+    stt = DeepgramSTTService(api_key=os.environ["DEEPGRAM_API_KEY"])
+
+    llm = GoogleLLMService(
+        api_key=os.environ["GOOGLE_API_KEY"],
+        model="gemini-2.5-flash",
+        system_instruction=system_prompt,
+        tools=tools,
+    )
+    register_tool_handlers(llm, active_mode)
+
+    tts = ElevenLabsTTSService(
+        api_key=os.environ["ELEVENLABS_API_KEY"],
+        voice_id=elevenlabs_voice_id,
+        model="eleven_turbo_v2_5",
+        sample_rate=24000,
+    )
+
+    context = LLMContext(messages=[], tools=tools)
+    aggregators = LLMContextAggregatorPair(context)
+
+    pipeline = Pipeline([
+        transport.input(),
+        stt,
+        aggregators.user(),
+        llm,
+        tts,
+        aggregators.assistant(),
+        transport.output(),
+    ])
+
+    task = PipelineTask(
+        pipeline,
+        params=PipelineParams(
+            allow_interruptions=True,
+            enable_metrics=True,
+        ),
+        idle_timeout_secs=None,
+        cancel_on_idle_timeout=False,
+    )
+
+    @transport.event_handler("on_client_disconnected")
+    async def on_client_disconnected(transport, client):
+        logger.info("Client disconnected; keeping pipeline alive for next meeting")
+
+    @transport.event_handler("on_client_connected")
+    async def on_client_connected(transport, client):
+        logger.info("Client connected (elevenlabs mode); resetting context")
+        context.messages.clear()
+        await task.queue_frame(LLMContextFrame(context=context))
+
+    print_ready(port, "elevenlabs")
+    runner = PipelineRunner(handle_sigterm=True)
+    logger.info(
+        "War Room ELEVENLABS mode on ws://0.0.0.0:%d (agent=%s mode=%s voice=%s tools=%d)",
+        port, active_agent, active_mode, elevenlabs_voice_id, len(standard_tools),
+    )
+    await runner.run(task)
+    logger.info("War Room session ended.")
+
+
 # ─── Entry point ───────────────────────────────────────────────────────────
 
 async def run_warroom():
     load_env()
-    mode = os.environ.get("WARROOM_MODE", "live").strip().lower()
-    if mode == "legacy":
-        await run_legacy_mode()
-    elif mode == "live":
-        await run_live_mode()
+    # Env var override takes precedence, then pin file engine field
+    env_mode = os.environ.get("WARROOM_MODE", "").strip().lower()
+    if env_mode:
+        engine = env_mode
     else:
-        logger.error(
-            "Unknown WARROOM_MODE=%r. Expected 'live' or 'legacy'. Defaulting to 'live'.",
-            mode,
-        )
+        _, _, engine = read_pin_state()
+
+    if engine == "legacy":
+        await run_legacy_mode()
+    elif engine == "elevenlabs":
+        await run_elevenlabs_mode()
+    else:
         await run_live_mode()
 
 

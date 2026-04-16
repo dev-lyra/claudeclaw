@@ -327,24 +327,26 @@ export function startDashboard(botApi?: Api<RawApi>): void {
   const WARROOM_PIN_PATH = '/tmp/warroom-pin.json';
   const VALID_PIN_AGENTS = new Set(['main', ...listAgentIds()]);
   const VALID_PIN_MODES = new Set(['direct', 'auto']);
+  const VALID_PIN_ENGINES = new Set(['live', 'elevenlabs', 'legacy']);
 
   // Read current pin state from disk. Returns normalized defaults for
-  // missing fields so callers can rely on both agent and mode being set.
-  function readPinState(): { agent: string | null; mode: string } {
+  // missing fields so callers can rely on agent, mode, and engine being set.
+  function readPinState(): { agent: string | null; mode: string; engine: string } {
     try {
       if (fs.existsSync(WARROOM_PIN_PATH)) {
         const raw = JSON.parse(fs.readFileSync(WARROOM_PIN_PATH, 'utf-8'));
         const agent = (raw && typeof raw.agent === 'string' && VALID_PIN_AGENTS.has(raw.agent)) ? raw.agent : null;
         const mode = (raw && typeof raw.mode === 'string' && VALID_PIN_MODES.has(raw.mode)) ? raw.mode : 'direct';
-        return { agent, mode };
+        const engine = (raw && typeof raw.engine === 'string' && VALID_PIN_ENGINES.has(raw.engine)) ? raw.engine : 'live';
+        return { agent, mode, engine };
       }
     } catch { /* fall through to defaults */ }
-    return { agent: null, mode: 'direct' };
+    return { agent: null, mode: 'direct', engine: 'live' };
   }
 
   app.get('/api/warroom/pin', (c) => {
-    const { agent, mode } = readPinState();
-    return c.json({ ok: true, agent, mode });
+    const { agent, mode, engine } = readPinState();
+    return c.json({ ok: true, agent, mode, engine });
   });
 
   // Kill the warroom Python subprocess so main's respawn logic in
@@ -377,15 +379,15 @@ export function startDashboard(botApi?: Api<RawApi>): void {
   }
 
   app.post('/api/warroom/pin', async (c) => {
-    let body: { agent?: string; mode?: string; restart?: boolean } = {};
+    let body: { agent?: string; mode?: string; engine?: string; restart?: boolean } = {};
     try { body = await c.req.json(); } catch { /* empty body */ }
 
-    // Pin can update agent, mode, or both. Missing fields preserve
-    // the current pin file value. An empty body is a noop but still
-    // respawns so the caller can force a reload.
+    // Pin can update agent, mode, engine, or any combination. Missing
+    // fields preserve the current pin file value.
     const current = readPinState();
     const nextAgent = body.agent !== undefined ? body.agent : (current.agent ?? 'main');
     const nextMode = body.mode !== undefined ? body.mode : current.mode;
+    const nextEngine = body.engine !== undefined ? body.engine : current.engine;
 
     if (!VALID_PIN_AGENTS.has(nextAgent)) {
       return c.json({ ok: false, error: 'invalid agent; must be one of main, research, comms, content, ops' }, 400);
@@ -393,11 +395,14 @@ export function startDashboard(botApi?: Api<RawApi>): void {
     if (!VALID_PIN_MODES.has(nextMode)) {
       return c.json({ ok: false, error: 'invalid mode; must be one of direct, auto' }, 400);
     }
+    if (!VALID_PIN_ENGINES.has(nextEngine)) {
+      return c.json({ ok: false, error: 'invalid engine; must be one of live, elevenlabs, legacy' }, 400);
+    }
 
     try {
       fs.writeFileSync(
         WARROOM_PIN_PATH,
-        JSON.stringify({ agent: nextAgent, mode: nextMode, pinnedAt: Date.now() }),
+        JSON.stringify({ agent: nextAgent, mode: nextMode, engine: nextEngine, pinnedAt: Date.now() }),
         'utf-8',
       );
       // Only respawn the server if the caller says a meeting is active.
@@ -405,9 +410,9 @@ export function startDashboard(botApi?: Api<RawApi>): void {
       // the next Start Meeting click (the health probe triggers it).
       const needsRestart = body.restart !== false;
       if (needsRestart) {
-        killWarroomAsync(`pin changed to agent=${nextAgent} mode=${nextMode}`);
+        killWarroomAsync(`pin changed to agent=${nextAgent} mode=${nextMode} engine=${nextEngine}`);
       }
-      return c.json({ ok: true, agent: nextAgent, mode: nextMode, respawning: needsRestart });
+      return c.json({ ok: true, agent: nextAgent, mode: nextMode, engine: nextEngine, respawning: needsRestart });
     } catch (err) {
       return c.json({ ok: false, error: String(err) }, 500);
     }
@@ -469,6 +474,26 @@ export function startDashboard(botApi?: Api<RawApi>): void {
   ];
   const GEMINI_VOICE_NAMES = new Set(GEMINI_VOICE_CATALOG.map((v) => v.name));
 
+  // Curated ElevenLabs voice catalog with accent/style info.
+  const ELEVENLABS_VOICE_CATALOG: Array<{ id: string; name: string; accent: string; style: string }> = [
+    { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', accent: 'American', style: 'Deep, narrative' },
+    { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni', accent: 'American', style: 'Well-rounded' },
+    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', accent: 'American', style: 'Soft, engaging' },
+    { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', accent: 'American', style: 'Calm, clear' },
+    { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', accent: 'American', style: 'Strong, direct' },
+    { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', accent: 'American', style: 'Emotional, warm' },
+    { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', accent: 'American', style: 'Deep, confident' },
+    { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold', accent: 'American', style: 'Crisp, bold' },
+    { id: 'yoZ06aMxZJJ28mfd3POQ', name: 'Sam', accent: 'American', style: 'Raspy, casual' },
+    { id: 'jBpfuIE2acCO8z3wKNLl', name: 'Gigi', accent: 'American', style: 'Childlike, cute' },
+    { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', accent: 'British', style: 'Authoritative, deep' },
+    { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte', accent: 'British', style: 'Seductive, calm' },
+    { id: 'cgSgspJ2msm6clMCkdW9', name: 'Jessica', accent: 'British', style: 'Expressive, warm' },
+    { id: 'iP95p4xoKVk53GoZ742B', name: 'Chris', accent: 'American', style: 'Casual, pleasant' },
+    { id: 'N2lVS1w4EtoT3dr4eOWO', name: 'Callum', accent: 'British', style: 'Intense, hoarse' },
+  ];
+  const ELEVENLABS_VOICE_IDS = new Set(ELEVENLABS_VOICE_CATALOG.map((v) => v.id));
+
   // Default voice assignments for agents that don't have an entry yet.
   // This is how a newly-spawned sub-agent gets a voice without any extra
   // setup. We skip Charon (reserved for main) so new agents always sound
@@ -478,7 +503,7 @@ export function startDashboard(botApi?: Api<RawApi>): void {
     'Fenrir', 'Laomedeia', 'Achird', 'Sulafat', 'Vindemiatrix',
   ];
 
-  function readVoicesFile(): Record<string, { voice_id?: string; gemini_voice?: string; name?: string }> {
+  function readVoicesFile(): Record<string, { voice_id?: string; gemini_voice?: string; elevenlabs_voice?: string; name?: string }> {
     try {
       return JSON.parse(fs.readFileSync(WARROOM_VOICES_PATH, 'utf-8'));
     } catch {
@@ -520,6 +545,7 @@ export function startDashboard(botApi?: Api<RawApi>): void {
       return {
         agent,
         gemini_voice: geminiVoice,
+        elevenlabs_voice: entry.elevenlabs_voice || '',
         voice_id: entry.voice_id || '',
         name: entry.name || '',
         is_default: isDefault,
@@ -529,15 +555,16 @@ export function startDashboard(botApi?: Api<RawApi>): void {
       ok: true,
       voices: rows,
       gemini_catalog: GEMINI_VOICE_CATALOG,
+      elevenlabs_catalog: ELEVENLABS_VOICE_CATALOG,
     });
   });
 
   app.post('/api/warroom/voices', async (c) => {
-    let body: { updates?: Array<{ agent: string; gemini_voice?: string; voice_id?: string; name?: string }> } = {};
+    let body: { updates?: Array<{ agent: string; gemini_voice?: string; elevenlabs_voice?: string; voice_id?: string; name?: string }> } = {};
     try { body = await c.req.json(); } catch { /* empty */ }
     const updates = body.updates;
     if (!Array.isArray(updates) || updates.length === 0) {
-      return c.json({ ok: false, error: 'updates must be a non-empty array of {agent, gemini_voice?, voice_id?, name?}' }, 400);
+      return c.json({ ok: false, error: 'updates must be a non-empty array of {agent, gemini_voice?, elevenlabs_voice?, voice_id?, name?}' }, 400);
     }
 
     const configured = readVoicesFile();
@@ -554,6 +581,13 @@ export function startDashboard(botApi?: Api<RawApi>): void {
           continue;
         }
         entry.gemini_voice = u.gemini_voice;
+      }
+      if (u.elevenlabs_voice !== undefined) {
+        if (typeof u.elevenlabs_voice !== 'string') {
+          errors.push(`${u.agent}: elevenlabs_voice must be a string`);
+          continue;
+        }
+        entry.elevenlabs_voice = u.elevenlabs_voice;
       }
       if (u.voice_id !== undefined) {
         if (typeof u.voice_id !== 'string') {

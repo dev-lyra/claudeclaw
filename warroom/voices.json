@@ -1,27 +1,32 @@
 {
   "main": {
     "voice_id": "a0e99841-438c-4a64-b679-ae501e7d6091",
-    "gemini_voice": "Leda",
+    "gemini_voice": "Charon",
+    "elevenlabs_voice": "pNInz6obpgDQGcFmaJgB",
     "name": "Charon / British Male (informative, confident)"
   },
   "research": {
     "voice_id": "bf991597-6c13-47e4-8411-91ec2de5c466",
     "gemini_voice": "Kore",
+    "elevenlabs_voice": "21m00Tcm4TlvDq8ikWAM",
     "name": "Kore / American Female (firm, analytical)"
   },
   "comms": {
     "voice_id": "c2ac25f9-ecc4-4f56-9095-651354df60c0",
     "gemini_voice": "Aoede",
+    "elevenlabs_voice": "onwK4e9ZLuTAKqWW03F9",
     "name": "Aoede / American Male (breezy, warm)"
   },
   "content": {
     "voice_id": "a01c369f-6d2d-4185-bc20-b32c225eab70",
-    "gemini_voice": "Orus",
+    "gemini_voice": "Leda",
+    "elevenlabs_voice": "EXAVITQu4vr4xnSDxMaL",
     "name": "Leda / British Female (youthful, creative)"
   },
   "ops": {
     "voice_id": "2ee87190-8f84-4925-97da-e52547f9462c",
     "gemini_voice": "Alnilam",
+    "elevenlabs_voice": "ErXwobaYiN019PkySvjV",
     "name": "Alnilam / American Male (firm, direct)"
   }
 }

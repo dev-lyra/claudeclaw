@@ -758,6 +758,9 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
         <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:6px;line-height:1.4">
           <span id="mode-hint">Direct: talk to the pinned agent. Hand Up: the team listens, best-fit answers.</span>
         </div>
+        <div style="margin-top:8px;font-size:10px;color:rgba(255,255,255,0.3)">
+          Voice Engine: <span id="engine-badge" style="color:#60a5fa;font-weight:600">Gemini Live</span>
+        </div>
         <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.04)">
           <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:10px;color:rgba(255,255,255,0.4)">
             <span>&#9835; Entrance music</span>
@@ -1491,6 +1494,11 @@ var AGENT_LABELS = AGENT_LABELS || {};
         hint.textContent = 'Hand Up: the team listens, best-fit answers. No need to name an agent.';
       }
     }
+    if (j && j.engine) {
+      var badge = document.getElementById('engine-badge');
+      var labels = { live: 'Gemini Live', elevenlabs: 'ElevenLabs', legacy: 'Legacy' };
+      if (badge) badge.textContent = labels[j.engine] || j.engine;
+    }
   } catch(e){}
 })();
 
@@ -1763,7 +1771,7 @@ async function toggleMeeting() {
                       },
                       onBotReady: function() {},
                       onUserTranscript: function(data) { if (data && data.final) addTranscriptEntry('You', data.text); },
-                      onBotTranscript: function(data) { if (data) addTranscriptEntry('Agent', data.text || '', 'main'); },
+                      onBotTranscript: function(data) { if (data) addTranscriptEntry('Agent', data.text || '', pinnedAgent || 'main'); },
                       onServerMessage: function(msg) { handleServerMessage(msg); },
                       onError: function(err) { console.error('[WarRoom] Reconnect error:', err); },
                     },
@@ -1794,7 +1802,7 @@ async function toggleMeeting() {
               }
             },
             onBotTranscript: function(data) {
-              if (data) addTranscriptEntry('Agent', data.text || '', 'main');
+              if (data) addTranscriptEntry('Agent', data.text || '', pinnedAgent || 'main');
             },
             onServerMessage: function(msg) { handleServerMessage(msg); },
             onError: function(error) {
