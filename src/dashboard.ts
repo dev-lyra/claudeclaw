@@ -476,6 +476,7 @@ export function startDashboard(botApi?: Api<RawApi>): void {
 
   // Curated ElevenLabs voice catalog with accent/style info.
   const ELEVENLABS_VOICE_CATALOG: Array<{ id: string; name: string; accent: string; style: string }> = [
+    { id: 'lcMyyd2HUfFzxdCaC4Ta', name: 'Lucy', accent: 'British', style: 'Fresh casual' },
     { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', accent: 'American', style: 'Deep, narrative' },
     { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni', accent: 'American', style: 'Well-rounded' },
     { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', accent: 'American', style: 'Soft, engaging' },
