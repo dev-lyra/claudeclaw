@@ -161,7 +161,7 @@ These are the files we've modified from the upstream base. When merging, pay att
 |------|----------------|---------------|
 | `warroom/server.py` | Added `run_elevenlabs_mode()`, extracted shared tool helpers, updated `read_pin_state()` to 3-tuple with engine, updated `run_warroom()` dispatch, fixed pipecat 1.0 import path | HIGH - if Mark refactors the server |
 | `src/dashboard.ts` | Added `ELEVENLABS_VOICE_CATALOG`, extended pin state with engine field, extended voice API endpoints with elevenlabs_voice | HIGH - if Mark changes voice endpoints |
-| `src/dashboard-html.ts` | Added engine toggle UI, conditional voice dropdowns, `setVoiceEngine()` function | MEDIUM - if Mark redesigns voice UI |
+| `src/dashboard-html.ts` | Added engine toggle UI, conditional voice dropdowns, `setVoiceEngine()` function. Rebranded dashboard header + browser title from "ClaudeClaw" to "Pantheon Automata" (lines 8, 160) | MEDIUM - if Mark redesigns voice UI |
 | `src/warroom-html.ts` | Added engine badge, fixed bot transcript to use pinnedAgent instead of hardcoded 'main', changed to -meet avatar variants | MEDIUM |
 | `src/bot.ts` | Fixed /dashboard to send localhost URL as code block instead of inline button | LOW |
 | `src/gemini.ts` | Updated model from gemini-2.0-flash to gemini-2.5-flash | LOW - Mark may do this too |
