@@ -38,6 +38,18 @@ PIN_PATH = Path("/tmp/warroom-pin.json")
 # Agent identifiers that match the agents/ directory names
 AGENT_NAMES = {"main", "research", "comms", "content", "ops"}
 
+# Display-name aliases → canonical agent id. Lets the user address agents
+# by their personal names (e.g. "Prometheus, what's the latest on X") in
+# addition to the canonical ids. Keep keys lowercase; the regex is
+# case-insensitive but we lowercase the match before lookup.
+AGENT_ALIASES = {
+    "gigi": "main",
+    "prometheus": "research",
+    "iris": "comms",
+    "apollo": "content",
+    "athena": "ops",
+}
+
 # Phrases that trigger a broadcast to all agents
 BROADCAST_TRIGGERS = {
     "everyone", "all", "team", "standup",
@@ -47,9 +59,13 @@ BROADCAST_TRIGGERS = {
 # Common casual prefixes people use before an agent name
 _GREETING_PREFIXES = r"(?:hey|yo|ok|okay|alright)?\s*"
 
-# Build a compiled pattern: optional greeting + agent name + separator
+# Build a compiled pattern: optional greeting + agent name (id OR display
+# alias) + separator. Sort by length desc so multi-char aliases don't get
+# shadowed by shorter prefixes (not strictly needed for current names,
+# but future-proofs against additions like "pro" vs "prometheus").
+_ROUTE_NAMES = sorted(AGENT_NAMES | set(AGENT_ALIASES.keys()), key=len, reverse=True)
 _agent_pattern = re.compile(
-    rf"^\s*{_GREETING_PREFIXES}({'|'.join(AGENT_NAMES)})[,:\s]+(.+)",
+    rf"^\s*{_GREETING_PREFIXES}({'|'.join(_ROUTE_NAMES)})[,:\s]+(.+)",
     re.IGNORECASE | re.DOTALL,
 )
 
@@ -164,7 +180,11 @@ class AgentRouter(FrameProcessor):
         # Check for agent name prefix
         match = _agent_pattern.match(text)
         if match:
-            agent_id = match.group(1).lower()
+            matched = match.group(1).lower()
+            # Resolve display-name aliases (e.g. "prometheus") back to
+            # the canonical agent id ("research") that the rest of the
+            # stack (DB, personas, routing) uses.
+            agent_id = AGENT_ALIASES.get(matched, matched)
             message = match.group(2).strip()
             route = AgentRouteFrame(
                 agent_id=agent_id,

@@ -168,6 +168,9 @@ These are the files we've modified from the upstream base. When merging, pay att
 | `src/skill-registry.test.ts` | Fixed tests to work with real skills directory | LOW |
 | `warroom/voices.json` | Added elevenlabs_voice field per agent | LOW - additive |
 | `warroom/requirements.txt` | Added elevenlabs,google extras to pipecat-ai | LOW - additive |
+| `warroom/personas.py` | Agents introduce themselves by display names (GiGi, Prometheus, Iris, Apollo, Athena) alongside canonical ids. Auto-router roster lists both. | MEDIUM - if Mark rewrites persona text |
+| `warroom/router.py` | Added `AGENT_ALIASES` dict mapping display names to canonical ids; extended `_agent_pattern` regex to accept both. Match handling resolves aliases back to canonical id before routing. | MEDIUM - if Mark restructures the name-prefix regex |
+| `agents/{research,comms,content,ops}/CLAUDE.md` | Renamed titles to `Prometheus (Research Agent)`, `Iris (Comms Agent)`, `Apollo (Content Agent)`, `Athena (Ops Agent)`. Intro paragraph now tells the agent its display name and canonical id. | LOW - additive text at top |
 
 ## Files That Never Conflict
 

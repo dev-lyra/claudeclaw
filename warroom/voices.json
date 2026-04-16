@@ -14,13 +14,13 @@
   "comms": {
     "voice_id": "c2ac25f9-ecc4-4f56-9095-651354df60c0",
     "gemini_voice": "Aoede",
-    "elevenlabs_voice": "onwK4e9ZLuTAKqWW03F9",
+    "elevenlabs_voice": "XB0fDUnXU5powFXDhCwa",
     "name": "Aoede / American Male (breezy, warm)"
   },
   "content": {
     "voice_id": "a01c369f-6d2d-4185-bc20-b32c225eab70",
     "gemini_voice": "Leda",
-    "elevenlabs_voice": "EXAVITQu4vr4xnSDxMaL",
+    "elevenlabs_voice": "cgSgspJ2msm6clMCkdW9",
     "name": "Leda / British Female (youthful, creative)"
   },
   "ops": {
