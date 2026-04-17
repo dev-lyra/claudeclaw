@@ -200,7 +200,7 @@ export function startDashboard(botApi?: Api<RawApi>): void {
     if (!fs.existsSync(avatarPath)) return c.text('', 404);
     const data = fs.readFileSync(avatarPath);
     return new Response(data, {
-      headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' },
+      headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' },
     });
   });
 

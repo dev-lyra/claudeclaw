@@ -213,7 +213,7 @@ const WARROOM_ENABLED = warroomEnabled;
 <!-- War Room Quick Access (only shown when WARROOM_ENABLED) -->
 ${WARROOM_ENABLED ? `<div class="card" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;border:1px solid #1e3a5f;background:linear-gradient(135deg,#0f172a 0%,#1a1a1a 100%)" onclick="window.open('/warroom?token=${token}&chatId=${chatId}','_blank')">
   <div>
-    <div style="font-size:14px;font-weight:600;color:#60a5fa">War Room</div>
+    <div style="font-size:14px;font-weight:600;color:#60a5fa">Agora Nexus</div>
     <div style="font-size:12px;color:#6b7280;margin-top:2px">Voice standup with your agent team</div>
   </div>
   <div style="font-size:20px;color:#3b82f6">&#127908;</div>
@@ -223,7 +223,7 @@ ${WARROOM_ENABLED ? `<div class="card" style="display:flex;align-items:center;ju
 ${WARROOM_ENABLED ? `<div class="card" style="border:1px solid #1e3a5f">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
     <div>
-      <div style="font-size:14px;font-weight:600;color:#a5b4fc">War Room Voices</div>
+      <div style="font-size:14px;font-weight:600;color:#a5b4fc">Agora Nexus Voices</div>
       <div id="voicesSubtitle" style="font-size:11px;color:#6b7280;margin-top:2px">Per-agent voice config.</div>
     </div>
     <div style="display:flex;gap:8px">
@@ -1241,7 +1241,7 @@ async function applyVoices() {
     var data = await res.json();
     if (!data.ok) throw new Error(data.error || 'apply failed');
     statusEl.style.color = '#10b981';
-    statusEl.textContent = 'Applied. War Room will be back up in ~7s.';
+    statusEl.textContent = 'Applied. Agora Nexus will be back up in ~7s.';
     setTimeout(function() { loadVoices(); }, 8000);
   } catch (err) {
     statusEl.style.color = '#ef4444';
@@ -1666,7 +1666,7 @@ async function loadAgents() {
       // Avatar served from /warroom-avatar/:id (same PNGs War Room uses).
       // The onerror fallback removes the <img> if no avatar file exists so
       // newly-created agents don't show a broken image icon.
-      const avatarUrl = '/warroom-avatar/' + encodeURIComponent(a.id) + '?token=' + encodeURIComponent(TOKEN);
+      const avatarUrl = '/warroom-avatar/' + encodeURIComponent(a.id) + '?token=' + encodeURIComponent(TOKEN) + '&v=' + Date.now();
       const avatarImg = '<img src="' + avatarUrl + '" alt="" ' +
         'style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid ' + color + ';flex-shrink:0;background:#0a0a0a" ' +
         'onerror="this.remove()">';

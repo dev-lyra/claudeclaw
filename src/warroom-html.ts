@@ -17,7 +17,7 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>War Room</title>
+<title>Agora Nexus</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -691,7 +691,7 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
 
 <!-- Cinematic intro (click to enter, which also satisfies Chrome autoplay policy) -->
 <div class="intro-overlay" id="introOverlay" onclick="enterWarRoom()" style="cursor:pointer">
-  <div class="intro-title">War Room</div>
+  <div class="intro-title">Agora Nexus</div>
   <div class="intro-line"></div>
   <div class="intro-subtitle" id="introSubtitle">Click to enter</div>
 </div>
@@ -699,7 +699,7 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
 <!-- Boardroom stage: shows the agents assembling around the table, then flying out to the sidebar -->
 <div class="stage" id="stage">
   <div class="stage-beam"></div>
-  <div class="stage-title">Assembling your war council</div>
+  <div class="stage-title">Convening Pantheon Automata</div>
   <div class="table-wrap">
     <div class="table-surface"></div>
     <div class="table-rim"></div>
@@ -738,7 +738,7 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
 <div class="app" id="app">
   <div class="header">
     <a href="/?token=${safeToken}&chatId=${safeChatId}" class="back-link">&larr; Mission Control</a>
-    <h1>War Room</h1>
+    <h1>Agora Nexus</h1>
     <div class="cost-display" id="costDisplay">$0.000</div>
   </div>
 
