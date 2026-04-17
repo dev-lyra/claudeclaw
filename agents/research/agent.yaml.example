@@ -1,4 +1,5 @@
 name: Research
+display_name: Prometheus
 description: Deep web research, academic sources, competitive intel, trend analysis
 
 telegram_bot_token_env: RESEARCH_BOT_TOKEN

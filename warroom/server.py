@@ -292,11 +292,11 @@ async def list_agents_handler(params):
     """Tool: list the sub-agents Gemini can delegate to, with one-line descriptions."""
     # Build roster from the dynamic agent list + hardcoded descriptions for known agents
     _known_descriptions = {
-        "main": "The Hand of the King. General ops, triage, defaults if unsure.",
-        "research": "Grand Maester. Web research, academic sources, competitive intel.",
-        "comms": "Master of Whisperers. Email, Slack, Telegram, customer comms.",
-        "content": "The Royal Bard. Writing, scripts, LinkedIn, YouTube, blog posts.",
-        "ops": "Master of War. Calendar, scheduling, internal tools, automations.",
+        "main": "Chief of Staff. General ops, triage, defaults if unsure.",
+        "research": "Research. Web research, academic sources, competitive intel.",
+        "comms": "Comms. Email, Slack, Telegram, customer comms.",
+        "content": "Content Creator. Writing, scripts, LinkedIn, YouTube, blog posts.",
+        "ops": "Operations. Calendar, scheduling, internal tools, automations.",
     }
     roster = {}
     # Start with dynamic roster from /tmp/warroom-agents.json

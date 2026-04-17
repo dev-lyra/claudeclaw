@@ -8,6 +8,12 @@
 #   npm start -- --agent myagent
 
 name: My Agent
+# Optional display name shown in the dashboard, War Room, and TTS.
+# Keep `name` (and the directory name) as the stable identifier used by
+# DB, CLI, and routing. Use `display_name` when you want a persona-style
+# label (e.g. `Prometheus`) without breaking anything that references the
+# canonical id.
+# display_name: My Agent
 description: What this agent does
 
 # The env var name in .env that holds this agent's Telegram bot token.

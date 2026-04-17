@@ -7,6 +7,11 @@ import { readEnvFile } from './env.js';
 
 export interface AgentConfig {
   name: string;
+  /** Optional display name shown in UI + voice (e.g. "Prometheus" for the
+   *  `research` agent). Falls back to `name` when unset. The canonical id
+   *  (the directory name) remains the stable identifier used by DB, CLI,
+   *  and routing. */
+  displayName?: string;
   description: string;
   botTokenEnv: string;
   botToken: string;
@@ -64,6 +69,9 @@ export function loadAgentConfig(agentId: string): AgentConfig {
   const raw = yaml.load(fs.readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
 
   const name = raw['name'] as string;
+  const displayName = typeof raw['display_name'] === 'string'
+    ? (raw['display_name'] as string)
+    : undefined;
   const description = (raw['description'] as string) ?? '';
   const botTokenEnv = raw['telegram_bot_token_env'] as string;
   const model = raw['model'] as string | undefined;
@@ -100,6 +108,7 @@ export function loadAgentConfig(agentId: string): AgentConfig {
 
   return {
     name,
+    displayName,
     description,
     botTokenEnv,
     botToken,
@@ -146,10 +155,14 @@ export function listAgentIds(): string[] {
 /** Return the capabilities (name + description) for a specific agent. */
 export function getAgentCapabilities(
   agentId: string,
-): { name: string; description: string } | null {
+): { name: string; displayName?: string; description: string } | null {
   try {
     const config = loadAgentConfig(agentId);
-    return { name: config.name, description: config.description };
+    return {
+      name: config.name,
+      displayName: config.displayName,
+      description: config.description,
+    };
   } catch {
     return null;
   }
@@ -163,6 +176,7 @@ export function getAgentCapabilities(
 export function listAllAgents(): Array<{
   id: string;
   name: string;
+  displayName?: string;
   description: string;
   model?: string;
 }> {
@@ -170,6 +184,7 @@ export function listAllAgents(): Array<{
   const result: Array<{
     id: string;
     name: string;
+    displayName?: string;
     description: string;
     model?: string;
   }> = [];
@@ -180,6 +195,7 @@ export function listAllAgents(): Array<{
       result.push({
         id,
         name: config.name,
+        displayName: config.displayName,
         description: config.description,
         model: config.model,
       });

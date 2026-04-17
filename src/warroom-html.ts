@@ -1439,11 +1439,11 @@ async function togglePin(agentId) {
 
 // Role labels for known agents (cosmetic only, custom agents get their description)
 var AGENT_ROLES = {
-  main: 'The Hand of the King',
-  research: 'Grand Maester',
-  comms: 'Master of Whisperers',
-  content: 'The Royal Bard',
-  ops: 'Master of War',
+  main: 'Chief of Staff',
+  research: 'Research',
+  comms: 'Comms',
+  content: 'Content Creator',
+  ops: 'Operations',
 };
 var AGENT_LABELS = AGENT_LABELS || {};
 
@@ -1458,14 +1458,15 @@ var AGENT_LABELS = AGENT_LABELS || {};
       container.innerHTML = '';
       data.agents.forEach(function(agent) {
         var role = AGENT_ROLES[agent.id] || agent.description || 'Specialist';
-        AGENT_LABELS[agent.id] = agent.name || agent.id;
+        var label = agent.displayName || agent.name || agent.id;
+        AGENT_LABELS[agent.id] = label;
         var card = document.createElement('div');
         card.className = 'agent-card';
         card.id = 'agent-' + agent.id;
         card.setAttribute('data-agent', agent.id);
         card.onclick = function(){ togglePin(agent.id); };
-        card.innerHTML = '<div class="agent-avatar"><img src="/warroom-avatar/' + encodeURIComponent(agent.id) + '?variant=meet&token=' + encodeURIComponent(TOKEN) + '" alt="' + (agent.name || agent.id) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=\\'none\\'"></div>'
-          + '<div class="agent-info"><div class="agent-name">' + (agent.name || agent.id) + '</div><div class="agent-role">' + role + '</div></div>'
+        card.innerHTML = '<div class="agent-avatar"><img src="/warroom-avatar/' + encodeURIComponent(agent.id) + '?variant=meet&token=' + encodeURIComponent(TOKEN) + '" alt="' + label + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.style.display=\\'none\\'"></div>'
+          + '<div class="agent-info"><div class="agent-name">' + label + '</div><div class="agent-role">' + role + '</div></div>'
           + '<div class="agent-indicator" id="status-' + agent.id + '"></div>';
         // Fade in
         setTimeout(function(){ card.style.opacity = '1'; card.style.transform = 'translateX(0)'; }, 50);

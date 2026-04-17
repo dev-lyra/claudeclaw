@@ -1204,7 +1204,10 @@ export function createBot(): Bot {
       await ctx.reply('No agents configured. Add agent configs under agents/ directory.');
       return;
     }
-    const lines = agents.map((a) => `<b>${a.id}</b> — ${a.description || '(no description)'}`).join('\n');
+    const lines = agents.map((a) => {
+      const label = a.displayName ? `<b>${a.id}</b> (${a.displayName})` : `<b>${a.id}</b>`;
+      return `${label} — ${a.description || '(no description)'}`;
+    }).join('\n');
     await ctx.reply(
       `<b>Available agents</b>\n\n${lines}\n\n<i>Usage: @agentId: prompt or /delegate agentId prompt</i>`,
       { parse_mode: 'HTML' },

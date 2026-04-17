@@ -171,6 +171,15 @@ These are the files we've modified from the upstream base. When merging, pay att
 | `warroom/personas.py` | Agents introduce themselves by display names (GiGi, Prometheus, Iris, Apollo, Athena) alongside canonical ids. Auto-router roster lists both. | MEDIUM - if Mark rewrites persona text |
 | `warroom/router.py` | Added `AGENT_ALIASES` dict mapping display names to canonical ids; extended `_agent_pattern` regex to accept both. Match handling resolves aliases back to canonical id before routing. | MEDIUM - if Mark restructures the name-prefix regex |
 | `agents/{research,comms,content,ops}/CLAUDE.md` | Renamed titles to `Prometheus (Research Agent)`, `Iris (Comms Agent)`, `Apollo (Content Agent)`, `Athena (Ops Agent)`. Intro paragraph now tells the agent its display name and canonical id. | LOW - additive text at top |
+| `agents/{research,comms,content,ops}/agent.yaml` | Added `display_name:` field (Prometheus/Iris/Apollo/Athena). Canonical `name` field unchanged. | LOW - additive |
+| `agents/_template/agent.yaml.example` | Documented the optional `display_name` field. | LOW - additive |
+| `src/agent-config.ts` | Added `displayName?: string` to `AgentConfig`, `getAgentCapabilities()`, and `listAllAgents()`. Parses `display_name` from yaml. | MEDIUM - if Mark refactors the config shape |
+| `src/orchestrator.ts` | Added `displayName?: string` to `AgentInfo`. Surfaced in `initOrchestrator`. Progress messages now say `Delegating to <displayName or name>...`. | MEDIUM |
+| `src/dashboard.ts` | `/api/agents` now returns `displayName` per agent; `main` is hardcoded to `GiGi`. | LOW - additive |
+| `src/dashboard-html.ts` | Agent modal title and mission board columns prefer `displayName || name`. | LOW |
+| `src/warroom-html.ts` | Agent cards render `displayName || name` (falls back to id). | LOW |
+| `src/index.ts` | `/tmp/warroom-agents.json` now includes `display_name` per agent (and `GiGi` for `main`). | LOW - additive |
+| `warroom/router.py` | `_load_dynamic_aliases()` merges display-name aliases from the roster file into `AGENT_ALIASES` on import, so routing picks up custom agents without a code change. | LOW - additive |
 
 ## Files That Never Conflict
 

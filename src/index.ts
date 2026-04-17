@@ -192,10 +192,15 @@ async function main(): Promise<void> {
         const ids = ['main', ...listAgentIds().filter((id) => id !== 'main')];
         const roster = ids.map((id) => {
           try {
-            if (id === 'main') return { id: 'main', name: 'Main', description: 'General ops and triage' };
+            if (id === 'main') return { id: 'main', name: 'Main', display_name: 'GiGi', description: 'General ops and triage' };
             const cfg = loadAgentConfig(id);
-            return { id, name: cfg.name || id, description: cfg.description || '' };
-          } catch { return { id, name: id, description: '' }; }
+            return {
+              id,
+              name: cfg.name || id,
+              display_name: cfg.displayName,
+              description: cfg.description || '',
+            };
+          } catch { return { id, name: id, display_name: undefined, description: '' }; }
         });
         fs.writeFileSync('/tmp/warroom-agents.json', JSON.stringify(roster, null, 2));
       } catch (err) {

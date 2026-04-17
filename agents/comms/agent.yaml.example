@@ -1,4 +1,5 @@
 name: Comms
+display_name: Iris
 description: All human communication -- email, Slack, WhatsApp, YouTube comments, community forums, LinkedIn DMs
 
 telegram_bot_token_env: COMMS_BOT_TOKEN

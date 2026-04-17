@@ -42,6 +42,10 @@ AGENT_NAMES = {"main", "research", "comms", "content", "ops"}
 # by their personal names (e.g. "Prometheus, what's the latest on X") in
 # addition to the canonical ids. Keep keys lowercase; the regex is
 # case-insensitive but we lowercase the match before lookup.
+#
+# Defaults cover the built-in Pantheon roster. On import we also merge in
+# any `display_name` fields from /tmp/warroom-agents.json (written by Node
+# at startup) so custom agents get picked up automatically.
 AGENT_ALIASES = {
     "gigi": "main",
     "prometheus": "research",
@@ -49,6 +53,27 @@ AGENT_ALIASES = {
     "apollo": "content",
     "athena": "ops",
 }
+
+
+def _load_dynamic_aliases() -> None:
+    """Merge display_name → id pairs from the roster file into AGENT_ALIASES.
+    Silently ignores missing/malformed files — the hardcoded defaults above
+    still route the built-in agents."""
+    roster_path = Path("/tmp/warroom-agents.json")
+    try:
+        agents = json.loads(roster_path.read_text())
+    except Exception:
+        return
+    for a in agents:
+        aid = a.get("id")
+        display = a.get("display_name")
+        if aid and display and isinstance(display, str):
+            AGENT_ALIASES[display.lower()] = aid
+        if aid:
+            AGENT_NAMES.add(aid)
+
+
+_load_dynamic_aliases()
 
 # Phrases that trigger a broadcast to all agents
 BROADCAST_TRIGGERS = {

@@ -22,6 +22,9 @@ export interface DelegationResult {
 export interface AgentInfo {
   id: string;
   name: string;
+  /** Optional Pantheon-style display name (e.g. "Prometheus" for `research`).
+   *  Use `displayName ?? name` when rendering to the user. */
+  displayName?: string;
   description: string;
 }
 
@@ -47,6 +50,7 @@ export function initOrchestrator(): void {
       agentRegistry.push({
         id,
         name: config.name,
+        displayName: config.displayName,
         description: config.description,
       });
     } catch (err) {
@@ -153,7 +157,8 @@ export async function delegateToAgent(
     `Delegated to ${agentId}: ${prompt.slice(0, 100)}`,
   );
 
-  onProgress?.(`Delegating to ${agent.name}...`);
+  const agentLabel = agent.displayName ?? agent.name;
+  onProgress?.(`Delegating to ${agentLabel}...`);
 
   try {
     // Load agent config to get its system prompt and MCP allowlist
@@ -210,7 +215,7 @@ export async function delegateToAgent(
       );
 
       onProgress?.(
-        `${agent.name} completed (${Math.round(durationMs / 1000)}s)`,
+        `${agentLabel} completed (${Math.round(durationMs / 1000)}s)`,
       );
 
       return {
