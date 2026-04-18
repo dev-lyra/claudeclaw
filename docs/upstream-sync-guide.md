@@ -176,8 +176,8 @@ These are the files we've modified from the upstream base. When merging, pay att
 | `src/agent-config.ts` | Added `displayName?: string` to `AgentConfig`, `getAgentCapabilities()`, and `listAllAgents()`. Parses `display_name` from yaml. | MEDIUM - if Mark refactors the config shape |
 | `src/orchestrator.ts` | Added `displayName?: string` to `AgentInfo`. Surfaced in `initOrchestrator`. Progress messages now say `Delegating to <displayName or name>...`. | MEDIUM |
 | `src/dashboard.ts` | `/api/agents` now returns `displayName` per agent; `main` is hardcoded to `GiGi`. | LOW - additive |
-| `src/dashboard-html.ts` | Agent modal title and mission board columns prefer `displayName || name`. | LOW |
-| `src/warroom-html.ts` | Agent cards render `displayName || name` (falls back to id). | LOW |
+| `src/dashboard-html.ts` | Agent modal title and mission board columns prefer `displayName || name`. Reordered sections: Tasks/Mission Control moved up, memory highlights side-by-side with Live Meetings, Memory Landscape + Agora Nexus Voices in right column. Summary bar grid changed from 4 to 5 columns. War Room card removed (replaced by summary tile). Mission board wraps instead of scrolling. Avatar URLs cache-busted. Avatar cache TTL 1h. | HIGH - major layout reorder |
+| `src/warroom-html.ts` | Agent cards render `displayName || name` (falls back to id). Renamed "War Room" to "Agora Nexus", "Assembling your war council" to "Convening the Pantheon Automata council". Stage avatar nameplates hidden. Role titles updated (Chief of Staff, Research, Comms, Content Creator, Operations). | MEDIUM |
 | `src/index.ts` | `/tmp/warroom-agents.json` now includes `display_name` per agent (and `GiGi` for `main`). | LOW - additive |
 | `warroom/router.py` | `_load_dynamic_aliases()` merges display-name aliases from the roster file into `AGENT_ALIASES` on import, so routing picks up custom agents without a code change. | LOW - additive |
 
