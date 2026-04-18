@@ -155,7 +155,7 @@ const WARROOM_ENABLED = warroomEnabled;
 <div class="max-w-lg lg:max-w-6xl mx-auto">
 
 <!-- Top bar -->
-<div class="flex items-center justify-between mb-1">
+<div class="flex items-center justify-between mb-8">
   <div class="flex items-center gap-3">
     <h1 class="text-xl font-bold text-white">Pantheon Automata <span style="font-size:13px;font-weight:400;color:#6b7280">Mission Control</span></h1>
     <span id="device-badge" class="device-badge"></span>
@@ -174,24 +174,24 @@ const WARROOM_ENABLED = warroomEnabled;
 <!-- Summary Stats Bar -->
 <div id="summary-bar" class="summary-bar" style="display:none">
   ${WARROOM_ENABLED ? `<div class="summary-stat clickable-card" onclick="window.open('/warroom?token=${token}&chatId=${chatId}','_blank')" style="cursor:pointer;border:1px solid #1e3a5f;background:linear-gradient(135deg,#0f172a 0%,#1a1a1a 100%)">
-    <span class="summary-stat-val" style="font-size:20px">&#127908;</span>
+    <span class="summary-stat-val" style="font-size:20px">&#127963;</span>
     <span class="summary-stat-label" style="color:#60a5fa">Agora Nexus</span>
   </div>` : ''}
-  <div class="summary-stat clickable-card" onclick="document.getElementById('hive-section').scrollIntoView({behavior:'smooth'})" style="cursor:pointer">
-    <span class="summary-stat-val" id="sum-messages">-</span>
-    <span class="summary-stat-label">Messages</span>
-  </div>
   <div class="summary-stat clickable-card" onclick="document.getElementById('agents-section').scrollIntoView({behavior:'smooth'})" style="cursor:pointer">
     <span class="summary-stat-val" id="sum-agents">-</span>
     <span class="summary-stat-label">Agents</span>
   </div>
-  <div class="summary-stat clickable-card" onclick="document.getElementById('tokens-section').scrollIntoView({behavior:'smooth'})" style="cursor:pointer">
-    <span class="summary-stat-val" id="sum-cost">-</span>
-    <span class="summary-stat-label">Tokens Today</span>
+  <div class="summary-stat clickable-card" onclick="document.getElementById('hive-section').scrollIntoView({behavior:'smooth'})" style="cursor:pointer">
+    <span class="summary-stat-val" id="sum-messages">-</span>
+    <span class="summary-stat-label">Messages</span>
   </div>
   <div class="summary-stat clickable-card" onclick="openMemoryDrawer()" style="cursor:pointer">
     <span class="summary-stat-val" id="sum-memories">-</span>
     <span class="summary-stat-label">Memories</span>
+  </div>
+  <div class="summary-stat clickable-card" onclick="document.getElementById('tokens-section').scrollIntoView({behavior:'smooth'})" style="cursor:pointer">
+    <span class="summary-stat-val" id="sum-cost">-</span>
+    <span class="summary-stat-label">Tokens Today</span>
   </div>
 </div>
 
