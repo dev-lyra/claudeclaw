@@ -1138,6 +1138,8 @@ function renderVoices() {
   var dirty = state.dirty;
 
   var html = rows.map(function(r) {
+    var agentInfo = missionAgentsList.find(function(a) { return a.id === r.agent; });
+    var displayLabel = agentInfo ? (agentInfo.displayName || agentInfo.name) : r.agent;
     var opts = '';
     if (engine === 'elevenlabs') {
       opts = state.elevenlabs_catalog.map(function(v) {
@@ -1145,7 +1147,6 @@ function renderVoices() {
         return '<option value="' + v.id + '"' + selected + '>' + v.name + ' (' + v.accent + ', ' + v.style + ')</option>';
       }).join('');
     } else if (engine === 'legacy') {
-      // Legacy uses voice_id (Cartesia) - show as text input
       opts = '<input data-agent="' + r.agent + '" data-field="voice_id" value="' + (r.voice_id || '') + '" onchange="onVoiceChange(this)" style="flex:1;max-width:280px;background:#0f172a;color:#e5e7eb;border:1px solid #1e293b;border-radius:4px;padding:4px 8px;font-size:12px;font-family:inherit" placeholder="Cartesia voice ID">';
     } else {
       opts = state.gemini_catalog.map(function(v) {
@@ -1163,9 +1164,9 @@ function renderVoices() {
       : '<select data-agent="' + r.agent + '" data-field="' + (engine === 'elevenlabs' ? 'elevenlabs_voice' : 'gemini_voice') + '" onchange="onVoiceChange(this)" style="flex:1;max-width:280px;background:#0f172a;color:#e5e7eb;border:1px solid #1e293b;border-radius:4px;padding:4px 8px;font-size:12px;font-family:inherit">' + opts + '</select>';
     return (
       '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,0.02);border:1px solid ' + borderColor + ';border-radius:6px">' +
-        '<div style="width:80px;font-size:12px;font-weight:600;color:#d1d5db;text-transform:uppercase;letter-spacing:0.5px">' + r.agent + dirtyBadge + '</div>' +
+        '<div style="width:100px;font-size:12px;font-weight:600;color:#d1d5db;letter-spacing:0.5px">' + displayLabel + dirtyBadge + '</div>' +
         selectHtml +
-        '<div style="flex:1;min-width:0;font-size:10px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (r.name || '') + '</div>' +
+        '<div style="flex:1;min-width:0;font-size:10px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + r.agent + '</div>' +
       '</div>'
     );
   }).join('');

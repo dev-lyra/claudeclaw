@@ -160,13 +160,13 @@ These are the files we've modified from the upstream base. When merging, pay att
 | File | What we changed | Conflict risk |
 |------|----------------|---------------|
 | `warroom/server.py` | Added `run_elevenlabs_mode()`, extracted shared tool helpers, updated `read_pin_state()` to 3-tuple with engine, updated `run_warroom()` dispatch, fixed pipecat 1.0 import path | HIGH - if Mark refactors the server |
-| `src/dashboard.ts` | Added `ELEVENLABS_VOICE_CATALOG`, extended pin state with engine field, extended voice API endpoints with elevenlabs_voice | HIGH - if Mark changes voice endpoints |
+| `src/dashboard.ts` | Added `ELEVENLABS_VOICE_CATALOG`, extended pin state with engine field, extended voice API endpoints with elevenlabs_voice. Removed male voices from both Gemini and ElevenLabs catalogs. `/api/warroom/agents` returns `displayName`. | HIGH - if Mark changes voice endpoints |
 | `src/dashboard-html.ts` | Added engine toggle UI, conditional voice dropdowns, `setVoiceEngine()` function. Rebranded dashboard header + browser title from "ClaudeClaw" to "Pantheon Automata" (lines 8, 160) | MEDIUM - if Mark redesigns voice UI |
 | `src/warroom-html.ts` | Added engine badge, fixed bot transcript to use pinnedAgent instead of hardcoded 'main', changed to -meet avatar variants | MEDIUM |
 | `src/bot.ts` | Fixed /dashboard to send localhost URL as code block instead of inline button | LOW |
 | `src/gemini.ts` | Updated model from gemini-2.0-flash to gemini-2.5-flash | LOW - Mark may do this too |
 | `src/skill-registry.test.ts` | Fixed tests to work with real skills directory | LOW |
-| `warroom/voices.json` | Added elevenlabs_voice field per agent | LOW - additive |
+| `warroom/voices.json` | Added elevenlabs_voice field per agent. Reassigned main (Zephyr) and ops (Kore/Domi) to female voices. | LOW - additive |
 | `warroom/requirements.txt` | Added elevenlabs,google extras to pipecat-ai | LOW - additive |
 | `warroom/personas.py` | Agents introduce themselves by display names (GiGi, Prometheus, Iris, Apollo, Athena) alongside canonical ids. Auto-router roster lists both. | MEDIUM - if Mark rewrites persona text |
 | `warroom/router.py` | Added `AGENT_ALIASES` dict mapping display names to canonical ids; extended `_agent_pattern` regex to accept both. Match handling resolves aliases back to canonical id before routing. | MEDIUM - if Mark restructures the name-prefix regex |

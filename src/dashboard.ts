@@ -442,56 +442,33 @@ export function startDashboard(botApi?: Api<RawApi>): void {
   // (and other Gemini TTS-capable models). Sourced from Google's docs.
   const GEMINI_VOICE_CATALOG: Array<{ name: string; style: string }> = [
     { name: 'Zephyr', style: 'Bright' },
-    { name: 'Puck', style: 'Upbeat' },
-    { name: 'Charon', style: 'Informative' },
     { name: 'Kore', style: 'Firm' },
-    { name: 'Fenrir', style: 'Excitable' },
     { name: 'Leda', style: 'Youthful' },
-    { name: 'Orus', style: 'Firm' },
     { name: 'Aoede', style: 'Breezy' },
     { name: 'Callirrhoe', style: 'Easy-going' },
     { name: 'Autonoe', style: 'Bright' },
-    { name: 'Enceladus', style: 'Breathy' },
-    { name: 'Iapetus', style: 'Clear' },
-    { name: 'Umbriel', style: 'Easy-going' },
-    { name: 'Algieba', style: 'Smooth' },
     { name: 'Despina', style: 'Smooth' },
     { name: 'Erinome', style: 'Clear' },
-    { name: 'Algenib', style: 'Gravelly' },
-    { name: 'Rasalgethi', style: 'Informative' },
     { name: 'Laomedeia', style: 'Upbeat' },
     { name: 'Achernar', style: 'Soft' },
-    { name: 'Alnilam', style: 'Firm' },
     { name: 'Schedar', style: 'Even' },
-    { name: 'Gacrux', style: 'Mature' },
     { name: 'Pulcherrima', style: 'Forward' },
-    { name: 'Achird', style: 'Friendly' },
-    { name: 'Zubenelgenubi', style: 'Casual' },
     { name: 'Vindemiatrix', style: 'Gentle' },
     { name: 'Sadachbia', style: 'Lively' },
-    { name: 'Sadaltager', style: 'Knowledgeable' },
     { name: 'Sulafat', style: 'Warm' },
   ];
   const GEMINI_VOICE_NAMES = new Set(GEMINI_VOICE_CATALOG.map((v) => v.name));
 
   // Curated ElevenLabs voice catalog with accent/style info.
   const ELEVENLABS_VOICE_CATALOG: Array<{ id: string; name: string; accent: string; style: string }> = [
-    { id: 'lcMyyd2HUfFzxdCaC4Ta', name: 'Lucy', accent: 'British', style: 'Fresh casual' },
-    { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', accent: 'American', style: 'Deep, narrative' },
-    { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni', accent: 'American', style: 'Well-rounded' },
+    { id: 'lcMyyd2HUfFzxdCaC4Ta', name: 'Lucy', accent: 'British', style: 'Fresh, casual' },
     { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', accent: 'American', style: 'Soft, engaging' },
     { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', accent: 'American', style: 'Calm, clear' },
     { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', accent: 'American', style: 'Strong, direct' },
     { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', accent: 'American', style: 'Emotional, warm' },
-    { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', accent: 'American', style: 'Deep, confident' },
-    { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold', accent: 'American', style: 'Crisp, bold' },
-    { id: 'yoZ06aMxZJJ28mfd3POQ', name: 'Sam', accent: 'American', style: 'Raspy, casual' },
     { id: 'jBpfuIE2acCO8z3wKNLl', name: 'Gigi', accent: 'American', style: 'Childlike, cute' },
-    { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', accent: 'British', style: 'Authoritative, deep' },
     { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte', accent: 'British', style: 'Seductive, calm' },
     { id: 'cgSgspJ2msm6clMCkdW9', name: 'Jessica', accent: 'British', style: 'Expressive, warm' },
-    { id: 'iP95p4xoKVk53GoZ742B', name: 'Chris', accent: 'American', style: 'Casual, pleasant' },
-    { id: 'N2lVS1w4EtoT3dr4eOWO', name: 'Callum', accent: 'British', style: 'Intense, hoarse' },
   ];
   const ELEVENLABS_VOICE_IDS = new Set(ELEVENLABS_VOICE_CATALOG.map((v) => v.id));
 
