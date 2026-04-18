@@ -53,7 +53,7 @@ const WARROOM_ENABLED = warroomEnabled;
   .hive-table .col-summary { color: #d4d4d8; word-break: break-word; line-height: 1.4; }
   .hive-scroll { max-height: 300px; overflow-y: auto; }
   /* Summary stats bar */
-  .summary-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+  .summary-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 12px; }
   .summary-stat { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; }
   .summary-stat-val { font-size: 20px; font-weight: 700; color: #fff; line-height: 1.2; }
   .summary-stat-label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -173,6 +173,10 @@ const WARROOM_ENABLED = warroomEnabled;
 
 <!-- Summary Stats Bar -->
 <div id="summary-bar" class="summary-bar" style="display:none">
+  ${WARROOM_ENABLED ? `<div class="summary-stat clickable-card" onclick="window.open('/warroom?token=${token}&chatId=${chatId}','_blank')" style="cursor:pointer;border:1px solid #1e3a5f;background:linear-gradient(135deg,#0f172a 0%,#1a1a1a 100%)">
+    <span class="summary-stat-val" style="font-size:20px">&#127908;</span>
+    <span class="summary-stat-label" style="color:#60a5fa">Agora Nexus</span>
+  </div>` : ''}
   <div class="summary-stat clickable-card" onclick="document.getElementById('hive-section').scrollIntoView({behavior:'smooth'})" style="cursor:pointer">
     <span class="summary-stat-val" id="sum-messages">-</span>
     <span class="summary-stat-label">Messages</span>
@@ -210,130 +214,6 @@ const WARROOM_ENABLED = warroomEnabled;
   <div id="agents-container" class="flex flex-wrap gap-3"></div>
 </div>
 
-<!-- War Room Quick Access (only shown when WARROOM_ENABLED) -->
-${WARROOM_ENABLED ? `<div class="card" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;border:1px solid #1e3a5f;background:linear-gradient(135deg,#0f172a 0%,#1a1a1a 100%)" onclick="window.open('/warroom?token=${token}&chatId=${chatId}','_blank')">
-  <div>
-    <div style="font-size:14px;font-weight:600;color:#60a5fa">Agora Nexus</div>
-    <div style="font-size:12px;color:#6b7280;margin-top:2px">Voice standup with your agent team</div>
-  </div>
-  <div style="font-size:20px;color:#3b82f6">&#127908;</div>
-</div>` : ''}
-
-<!-- War Room Voice Settings (only shown when WARROOM_ENABLED) -->
-${WARROOM_ENABLED ? `<div class="card" style="border:1px solid #1e3a5f">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-    <div>
-      <div style="font-size:14px;font-weight:600;color:#a5b4fc">Agora Nexus Voices</div>
-      <div id="voicesSubtitle" style="font-size:11px;color:#6b7280;margin-top:2px">Per-agent voice config.</div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button id="voicesSaveBtn" onclick="saveVoices()" disabled style="background:#374151;color:#9ca3af;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:not-allowed">Save</button>
-      <button id="voicesApplyBtn" onclick="applyVoices()" style="background:#4f46e5;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer">Save &amp; Apply</button>
-    </div>
-  </div>
-  <div id="engineToggle" style="display:flex;gap:6px;margin-bottom:12px">
-    <button class="engine-btn active" data-engine="live" onclick="setVoiceEngine('live')" style="flex:1;padding:6px 0;border-radius:6px;border:1px solid #374151;background:#1a1a1a;color:#9ca3af;font-size:11px;font-weight:600;cursor:pointer">Gemini Live</button>
-    <button class="engine-btn" data-engine="elevenlabs" onclick="setVoiceEngine('elevenlabs')" style="flex:1;padding:6px 0;border-radius:6px;border:1px solid #374151;background:#1a1a1a;color:#9ca3af;font-size:11px;font-weight:600;cursor:pointer">ElevenLabs</button>
-    <button class="engine-btn" data-engine="legacy" onclick="setVoiceEngine('legacy')" style="flex:1;padding:6px 0;border-radius:6px;border:1px solid #374151;background:#1a1a1a;color:#9ca3af;font-size:11px;font-weight:600;cursor:pointer">Legacy</button>
-  </div>
-  <div id="voicesRows" style="display:flex;flex-direction:column;gap:6px">
-    <div style="font-size:11px;color:#6b7280;padding:8px 0">Loading voices...</div>
-  </div>
-  <div id="voicesStatus" style="font-size:11px;color:#6b7280;margin-top:8px;min-height:14px"></div>
-</div>` : ''}
-
-<!-- Live Meetings: two modes sharing one card and one sessions list -->
-<div class="card" id="meet-card" style="border:1px solid #1e3a5f">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-    <div>
-      <div style="font-size:14px;font-weight:600;color:#a5b4fc">Live Meetings</div>
-      <div style="font-size:11px;color:#6b7280;margin-top:2px">Send an agent into a Google Meet. Pick avatar or voice-only below.</div>
-    </div>
-    <button onclick="openNewMeet()" style="background:#1a1a1a;color:#60a5fa;border:1px solid #1e3a5f;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer">New Meet &#8599;</button>
-  </div>
-
-  <!-- Mode 1: Pika avatar (existing, preserved) -->
-  <div style="padding:10px 12px;background:#0b0f1a;border:1px solid #1e293b;border-radius:8px;margin-bottom:10px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div style="font-size:12px;font-weight:600;color:#60a5fa">Avatar mode &middot; Pika</div>
-      <div style="font-size:10px;color:#6b7280">Real-time AI avatar, ~$0.28/min, Pika-rendered face &amp; voice</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <select id="meet-agent-select" style="background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;min-width:110px">
-        <option value="main">Main</option>
-      </select>
-      <input type="text" id="meet-url-input" placeholder="Paste Meet URL, or leave empty to auto-read clipboard"
-        style="flex:1;min-width:220px;background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;font-family:ui-monospace,monospace">
-      <label style="display:flex;gap:5px;align-items:center;color:#9ca3af;font-size:11px;cursor:pointer;user-select:none">
-        <input type="checkbox" id="meet-auto-brief" checked style="margin:0;accent-color:#4f46e5"> Auto-brief
-      </label>
-      <button onclick="sendAgentToMeet()" id="meet-send-btn"
-        style="background:#4f46e5;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">Send</button>
-    </div>
-    <div id="meet-status" style="font-size:11px;color:#6b7280;min-height:14px;margin-top:6px"></div>
-  </div>
-
-  <!-- Mode 2: Voice-only via Recall.ai (new) -->
-  <div style="padding:10px 12px;background:#0f0b1a;border:1px solid #2b1e3b;border-radius:8px;margin-bottom:10px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div style="font-size:12px;font-weight:600;color:#a78bfa">Voice-only mode &middot; Recall.ai</div>
-      <div style="font-size:10px;color:#6b7280">Joins an existing Google Meet URL, audio only, ~$0.01/min</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <select id="meet-voice-agent-select" style="background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;min-width:110px">
-        <option value="main">Main</option>
-      </select>
-      <input type="text" id="meet-voice-url-input" placeholder="Paste Meet URL, or leave empty to auto-read clipboard"
-        style="flex:1;min-width:220px;background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;font-family:ui-monospace,monospace">
-      <label style="display:flex;gap:5px;align-items:center;color:#9ca3af;font-size:11px;cursor:pointer;user-select:none">
-        <input type="checkbox" id="meet-voice-auto-brief" checked style="margin:0;accent-color:#a78bfa"> Auto-brief
-      </label>
-      <button onclick="sendVoiceAgentToMeet()" id="meet-voice-send-btn"
-        style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">Send</button>
-    </div>
-    <div id="meet-voice-status" style="font-size:11px;color:#6b7280;min-height:14px;margin-top:6px"></div>
-  </div>
-
-  <!-- Mode 3: Daily.co Pipecat pipeline -->
-  <div style="padding:10px 12px;background:#0a1410;border:1px solid #1a3b2b;border-radius:8px;margin-bottom:10px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div style="font-size:12px;font-weight:600;color:#34d399">Daily.co mode &middot; Pipecat + Gemini Live</div>
-      <div style="font-size:10px;color:#6b7280">Creates a Daily room, share the link with whoever. Sub-second latency, real tool calling.</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <select id="meet-daily-agent-select" style="background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;min-width:110px">
-        <option value="main">Main</option>
-      </select>
-      <select id="meet-daily-mode-select" style="background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;min-width:100px">
-        <option value="direct">Direct</option>
-        <option value="auto">Hand Up</option>
-      </select>
-      <label style="display:flex;gap:5px;align-items:center;color:#9ca3af;font-size:11px;cursor:pointer;user-select:none">
-        <input type="checkbox" id="meet-daily-auto-brief" style="margin:0;accent-color:#10b981"> Auto-brief
-      </label>
-      <button onclick="createDailyRoom()" id="meet-daily-send-btn"
-        style="background:#10b981;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">Create room &amp; dispatch</button>
-    </div>
-    <div id="meet-daily-status" style="font-size:11px;color:#6b7280;min-height:14px;margin-top:6px"></div>
-    <div id="meet-daily-room-box" style="display:none;margin-top:8px;padding:8px 10px;background:#050b08;border:1px solid #1a3b2b;border-radius:6px;font-size:11px;color:#a7f3d0;font-family:ui-monospace,monospace;word-break:break-all">
-      <span id="meet-daily-room-url"></span>
-      <button id="meet-daily-copy-btn" onclick="copyDailyRoomUrl()" style="margin-left:8px;background:#10b981;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;cursor:pointer">Copy</button>
-    </div>
-  </div>
-
-  <div style="font-size:10px;color:#4b5563;text-transform:uppercase;letter-spacing:1px;margin:6px 2px">Active sessions</div>
-  <div id="meet-sessions" style="display:flex;flex-direction:column;gap:6px">
-    <div style="font-size:11px;color:#6b7280;padding:4px 0">No active sessions.</div>
-  </div>
-</div>
-
-<!-- Hive Mind Feed -->
-<div id="hive-section" class="mb-5" style="display:none">
-  <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Hive Mind<button class="privacy-toggle" onclick="toggleSectionBlur('hive')" title="Toggle blur">&#128065;</button></h2>
-  <div id="hive-container" class="card hive-scroll">
-    <div class="text-gray-500 text-sm">Loading...</div>
-  </div>
-</div>
 
 <!-- Tasks Inbox -->
 <div id="tasks-inbox-section" class="mb-5" style="display:none">
@@ -353,7 +233,127 @@ ${WARROOM_ENABLED ? `<div class="card" style="border:1px solid #1e3a5f">
     <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Mission Control</h2>
     <button onclick="openTaskHistory()" style="background:none;border:none;color:#6b7280;font-size:12px;cursor:pointer">History &rarr;</button>
   </div>
-  <div id="mission-board" class="flex gap-3 overflow-x-auto pb-2" style="scroll-snap-type: x mandatory;">
+  <div id="mission-board" class="flex gap-3 pb-2" style="flex-wrap:wrap;">
+  </div>
+</div>
+
+<!-- Memory highlights + Live Meetings side by side -->
+<div class="lg:grid lg:grid-cols-2 lg:gap-6 mb-5">
+<div>
+  <div class="card">
+    <div class="flex items-center justify-between mb-1">
+      <div class="text-xs text-gray-400">Fading Soon <span class="text-gray-600">(salience &lt; 0.5)</span><span class="info-tip"><span class="info-icon">\u24D8</span><span class="info-tooltip">Memories losing salience. High-importance ones decay slower; low-importance ones fade fast.</span></span></div>
+      <button class="text-xs text-gray-600 hover:text-gray-400 transition" onclick="openMemoryDrawer()">Browse all &rarr;</button>
+    </div>
+    <div id="fading-list" class="text-sm"></div>
+  </div>
+  <div class="card">
+    <div class="flex items-center justify-between mb-1">
+      <div class="text-xs text-gray-400">Recently Retrieved<span class="info-tip"><span class="info-icon">\u24D8</span><span class="info-tooltip">High-importance memories recently used in conversations.</span></span></div>
+      <button class="text-xs text-gray-600 hover:text-gray-400 transition" onclick="openMemoryDrawer()">Browse all &rarr;</button>
+    </div>
+    <div id="top-accessed-list" class="text-sm"></div>
+  </div>
+  <div class="card">
+    <div class="flex items-center justify-between mb-1">
+      <div class="text-xs text-gray-400">Recent Insights<span class="info-tip"><span class="info-icon">\u24D8</span><span class="info-tooltip">Patterns and connections discovered across memories by the consolidation engine.</span></span></div>
+    </div>
+    <div id="insights-list" class="text-sm"></div>
+  </div>
+</div>
+<div>
+  <!-- Live Meetings -->
+  <div class="card" id="meet-card" style="border:1px solid #1e3a5f">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:#a5b4fc">Live Meetings</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px">Send an agent into a Google Meet. Pick avatar or voice-only below.</div>
+      </div>
+      <button onclick="openNewMeet()" style="background:#1a1a1a;color:#60a5fa;border:1px solid #1e3a5f;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer">New Meet &#8599;</button>
+    </div>
+
+    <!-- Mode 1: Pika avatar -->
+    <div style="padding:10px 12px;background:#0b0f1a;border:1px solid #1e293b;border-radius:8px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:600;color:#60a5fa">Avatar mode &middot; Pika</div>
+        <div style="font-size:10px;color:#6b7280">Real-time AI avatar, ~$0.28/min, Pika-rendered face &amp; voice</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="meet-agent-select" style="background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;min-width:110px">
+          <option value="main">Main</option>
+        </select>
+        <input type="text" id="meet-url-input" placeholder="Paste Meet URL, or leave empty to auto-read clipboard"
+          style="flex:1;min-width:220px;background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;font-family:ui-monospace,monospace">
+        <label style="display:flex;gap:5px;align-items:center;color:#9ca3af;font-size:11px;cursor:pointer;user-select:none">
+          <input type="checkbox" id="meet-auto-brief" checked style="margin:0;accent-color:#4f46e5"> Auto-brief
+        </label>
+        <button onclick="sendAgentToMeet()" id="meet-send-btn"
+          style="background:#4f46e5;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">Send</button>
+      </div>
+      <div id="meet-status" style="font-size:11px;color:#6b7280;min-height:14px;margin-top:6px"></div>
+    </div>
+
+    <!-- Mode 2: Voice-only via Recall.ai -->
+    <div style="padding:10px 12px;background:#0f0b1a;border:1px solid #2b1e3b;border-radius:8px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:600;color:#a78bfa">Voice-only mode &middot; Recall.ai</div>
+        <div style="font-size:10px;color:#6b7280">Joins an existing Google Meet URL, audio only, ~$0.01/min</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="meet-voice-agent-select" style="background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;min-width:110px">
+          <option value="main">Main</option>
+        </select>
+        <input type="text" id="meet-voice-url-input" placeholder="Paste Meet URL, or leave empty to auto-read clipboard"
+          style="flex:1;min-width:220px;background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;font-family:ui-monospace,monospace">
+        <label style="display:flex;gap:5px;align-items:center;color:#9ca3af;font-size:11px;cursor:pointer;user-select:none">
+          <input type="checkbox" id="meet-voice-auto-brief" checked style="margin:0;accent-color:#a78bfa"> Auto-brief
+        </label>
+        <button onclick="sendVoiceAgentToMeet()" id="meet-voice-send-btn"
+          style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">Send</button>
+      </div>
+      <div id="meet-voice-status" style="font-size:11px;color:#6b7280;min-height:14px;margin-top:6px"></div>
+    </div>
+
+    <!-- Mode 3: Daily.co Pipecat pipeline -->
+    <div style="padding:10px 12px;background:#0a1410;border:1px solid #1a3b2b;border-radius:8px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:600;color:#34d399">Daily.co mode &middot; Pipecat + Gemini Live</div>
+        <div style="font-size:10px;color:#6b7280">Creates a Daily room, share the link with whoever. Sub-second latency, real tool calling.</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="meet-daily-agent-select" style="background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;min-width:110px">
+          <option value="main">Main</option>
+        </select>
+        <select id="meet-daily-mode-select" style="background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:6px;padding:6px 10px;font-size:12px;min-width:100px">
+          <option value="direct">Direct</option>
+          <option value="auto">Hand Up</option>
+        </select>
+        <label style="display:flex;gap:5px;align-items:center;color:#9ca3af;font-size:11px;cursor:pointer;user-select:none">
+          <input type="checkbox" id="meet-daily-auto-brief" style="margin:0;accent-color:#10b981"> Auto-brief
+        </label>
+        <button onclick="createDailyRoom()" id="meet-daily-send-btn"
+          style="background:#10b981;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer">Create room &amp; dispatch</button>
+      </div>
+      <div id="meet-daily-status" style="font-size:11px;color:#6b7280;min-height:14px;margin-top:6px"></div>
+      <div id="meet-daily-room-box" style="display:none;margin-top:8px;padding:8px 10px;background:#050b08;border:1px solid #1a3b2b;border-radius:6px;font-size:11px;color:#a7f3d0;font-family:ui-monospace,monospace;word-break:break-all">
+        <span id="meet-daily-room-url"></span>
+        <button id="meet-daily-copy-btn" onclick="copyDailyRoomUrl()" style="margin-left:8px;background:#10b981;color:#fff;border:none;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;cursor:pointer">Copy</button>
+      </div>
+    </div>
+
+    <div style="font-size:10px;color:#4b5563;text-transform:uppercase;letter-spacing:1px;margin:6px 2px">Active sessions</div>
+    <div id="meet-sessions" style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;color:#6b7280;padding:4px 0">No active sessions.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Hive Mind Feed -->
+<div id="hive-section" class="mb-5" style="display:none">
+  <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Hive Mind<button class="privacy-toggle" onclick="toggleSectionBlur('hive')" title="Toggle blur">&#128065;</button></h2>
+  <div id="hive-container" class="card hive-scroll">
+    <div class="text-gray-500 text-sm">Loading...</div>
   </div>
 </div>
 
@@ -486,73 +486,20 @@ ${WARROOM_ENABLED ? `<div class="card" style="border:1px solid #1e3a5f">
   </div>
 </div>
 
-<!-- Desktop: 2-column grid. Mobile: stacked. -->
+<!-- Scheduled Tasks + System Health / Token Usage (2-column) -->
 <div class="lg:grid lg:grid-cols-2 lg:gap-6">
 
 <!-- LEFT COLUMN -->
 <div>
-
 <!-- Scheduled Tasks -->
 <div id="tasks-section">
   <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Scheduled Tasks<span class="info-tip"><span class="info-icon">\u24D8</span><span class="info-tooltip">Automated tasks scheduled by the bot (e.g. reminders, checks). Shows the schedule, status, and time until next run.</span></span><button class="privacy-toggle" onclick="toggleSectionBlur('tasks')" title="Toggle blur">&#128065;</button></h2>
   <div id="tasks-container"><div class="card text-gray-500 text-sm">Loading...</div></div>
 </div>
-
-<!-- Memory Landscape -->
-<div id="memory-section" class="mt-5">
-  <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Memory Landscape</h2>
-  <div class="grid grid-cols-3 gap-3 mb-3">
-    <div class="card clickable-card text-center" onclick="openMemoryDrawer()" style="cursor:pointer">
-      <div class="stat-val" id="mem-total">-</div>
-      <div class="stat-label">Memories</div>
-      <div class="text-xs text-gray-600 mt-1">Tap to browse</div>
-    </div>
-    <div class="card clickable-card text-center" onclick="openInsightsDrawer()" style="cursor:pointer">
-      <div class="stat-val" id="mem-consolidations">-</div>
-      <div class="stat-label">Insights</div>
-      <div class="text-xs text-gray-600 mt-1">Tap to browse</div>
-    </div>
-    <div class="card clickable-card text-center" onclick="openPinnedDrawer()" style="cursor:pointer">
-      <div class="stat-val" id="mem-pinned" style="color:#60a5fa">-</div>
-      <div class="stat-label">Pinned</div>
-      <div class="text-xs text-gray-600 mt-1">Tap to browse</div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="text-xs text-gray-400 mb-2">Importance Distribution<span class="info-tip"><span class="info-icon">\u24D8</span><span class="info-tooltip">Distribution of memories by LLM-assigned importance (0-1). Higher = more critical to remember long-term.</span></span></div>
-    <canvas id="importance-chart" height="120"></canvas>
-  </div>
-  <div class="card">
-    <div class="flex items-center justify-between mb-1">
-      <div class="text-xs text-gray-400">Fading Soon <span class="text-gray-600">(salience &lt; 0.5)</span><span class="info-tip"><span class="info-icon">\u24D8</span><span class="info-tooltip">Memories losing salience. High-importance ones decay slower; low-importance ones fade fast.</span></span></div>
-      <button class="text-xs text-gray-600 hover:text-gray-400 transition" onclick="openMemoryDrawer()">Browse all &rarr;</button>
-    </div>
-    <div id="fading-list" class="text-sm"></div>
-  </div>
-  <div class="card">
-    <div class="flex items-center justify-between mb-1">
-      <div class="text-xs text-gray-400">Recently Retrieved<span class="info-tip"><span class="info-icon">\u24D8</span><span class="info-tooltip">High-importance memories recently used in conversations.</span></span></div>
-      <button class="text-xs text-gray-600 hover:text-gray-400 transition" onclick="openMemoryDrawer()">Browse all &rarr;</button>
-    </div>
-    <div id="top-accessed-list" class="text-sm"></div>
-  </div>
-  <div class="card">
-    <div class="flex items-center justify-between mb-1">
-      <div class="text-xs text-gray-400">Recent Insights<span class="info-tip"><span class="info-icon">\u24D8</span><span class="info-tooltip">Patterns and connections discovered across memories by the consolidation engine.</span></span></div>
-    </div>
-    <div id="insights-list" class="text-sm"></div>
-  </div>
-  <div class="card">
-    <div class="text-xs text-gray-400 mb-2">Memory Creation (30d)<span class="info-tip"><span class="info-icon">\u24D8</span><span class="info-tooltip">Number of new memories created per day over the last 30 days. Only meaningful exchanges get stored.</span></span></div>
-    <canvas id="memory-timeline-chart" height="140"></canvas>
-  </div>
-</div>
-
 </div><!-- end LEFT COLUMN -->
 
 <!-- RIGHT COLUMN -->
 <div>
-
 <!-- System Health -->
 <div id="health-section" class="mt-5 lg:mt-0">
   <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">System Health</h2>
@@ -607,11 +554,60 @@ ${WARROOM_ENABLED ? `<div class="card" style="border:1px solid #1e3a5f">
     <div class="text-xs text-gray-400 mb-2">Usage Timeline (30d)<span class="info-tip"><span class="info-icon">\u24D8</span><span class="info-tooltip">Daily token usage over the last 30 days.</span></span></div>
     <canvas id="cost-chart" height="140"></canvas>
   </div>
-
+<!-- Memory Landscape -->
+<div id="memory-section" class="mt-5">
+  <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Memory Landscape</h2>
+  <div class="grid grid-cols-3 gap-3 mb-3">
+    <div class="card clickable-card text-center" onclick="openMemoryDrawer()" style="cursor:pointer">
+      <div class="stat-val" id="mem-total">-</div>
+      <div class="stat-label">Memories</div>
+      <div class="text-xs text-gray-600 mt-1">Tap to browse</div>
+    </div>
+    <div class="card clickable-card text-center" onclick="openInsightsDrawer()" style="cursor:pointer">
+      <div class="stat-val" id="mem-consolidations">-</div>
+      <div class="stat-label">Insights</div>
+      <div class="text-xs text-gray-600 mt-1">Tap to browse</div>
+    </div>
+    <div class="card clickable-card text-center" onclick="openPinnedDrawer()" style="cursor:pointer">
+      <div class="stat-val" id="mem-pinned" style="color:#60a5fa">-</div>
+      <div class="stat-label">Pinned</div>
+      <div class="text-xs text-gray-600 mt-1">Tap to browse</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="text-xs text-gray-400 mb-2">Memory Creation (30d)<span class="info-tip"><span class="info-icon">\u24D8</span><span class="info-tooltip">Number of new memories created per day over the last 30 days. Only meaningful exchanges get stored.</span></span></div>
+    <canvas id="memory-timeline-chart" height="140"></canvas>
+  </div>
+  <div class="card">
+    <div class="text-xs text-gray-400 mb-2">Importance Distribution<span class="info-tip"><span class="info-icon">\u24D8</span><span class="info-tooltip">Distribution of memories by LLM-assigned importance (0-1). Higher = more critical to remember long-term.</span></span></div>
+    <canvas id="importance-chart" height="120"></canvas>
+  </div>
 </div>
 
-</div><!-- end RIGHT COLUMN -->
+<!-- Agora Nexus Voices (only shown when WARROOM_ENABLED) -->
+${WARROOM_ENABLED ? `<div class="card mt-5" style="border:1px solid #1e3a5f">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div>
+      <div style="font-size:14px;font-weight:600;color:#a5b4fc">Agora Nexus Voices</div>
+      <div id="voicesSubtitle" style="font-size:11px;color:#6b7280;margin-top:2px">Per-agent voice config.</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button id="voicesSaveBtn" onclick="saveVoices()" disabled style="background:#374151;color:#9ca3af;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:not-allowed">Save</button>
+      <button id="voicesApplyBtn" onclick="applyVoices()" style="background:#4f46e5;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer">Save &amp; Apply</button>
+    </div>
+  </div>
+  <div id="engineToggle" style="display:flex;gap:6px;margin-bottom:12px">
+    <button class="engine-btn active" data-engine="live" onclick="setVoiceEngine('live')" style="flex:1;padding:6px 0;border-radius:6px;border:1px solid #374151;background:#1a1a1a;color:#9ca3af;font-size:11px;font-weight:600;cursor:pointer">Gemini Live</button>
+    <button class="engine-btn" data-engine="elevenlabs" onclick="setVoiceEngine('elevenlabs')" style="flex:1;padding:6px 0;border-radius:6px;border:1px solid #374151;background:#1a1a1a;color:#9ca3af;font-size:11px;font-weight:600;cursor:pointer">ElevenLabs</button>
+    <button class="engine-btn" data-engine="legacy" onclick="setVoiceEngine('legacy')" style="flex:1;padding:6px 0;border-radius:6px;border:1px solid #374151;background:#1a1a1a;color:#9ca3af;font-size:11px;font-weight:600;cursor:pointer">Legacy</button>
+  </div>
+  <div id="voicesRows" style="display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:11px;color:#6b7280;padding:8px 0">Loading voices...</div>
+  </div>
+  <div id="voicesStatus" style="font-size:11px;color:#6b7280;margin-top:8px;min-height:14px"></div>
+</div>` : ''}
 
+</div><!-- end RIGHT COLUMN -->
 </div><!-- end grid -->
 </div><!-- end outer wrapper -->
 
@@ -2303,7 +2299,7 @@ async function loadMissionControl() {
           ? '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#22c55e;margin-right:4px"></span>'
           : '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;border:1px solid #555;margin-right:4px"></span>';
         const agentTasks = cols[id] || [];
-        html += '<div class="flex-shrink-0" style="min-width:220px;scroll-snap-align:start;">' +
+        html += '<div style="flex:1;min-width:140px;scroll-snap-align:start;">' +
           '<div class="text-xs font-semibold mb-1 uppercase" style="color:' + color + '">' + dot + (agent ? (agent.displayName || agent.name) : id) + '</div>' +
           '<div data-drop-agent="' + id + '" ondragover="missionDragOver(event)" ondragleave="missionDragLeave(event)" ondrop="missionDrop(event)" style="border:1px solid #2a2a2a;border-radius:10px;padding:8px;min-height:120px;background:#141414;transition:border-color 0.2s,background 0.2s">' +
           (agentTasks.length ? agentTasks.map(renderMissionCard).join('') : '<div class="text-xs text-gray-600 text-center py-4">No tasks</div>') +

@@ -206,7 +206,7 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
     opacity: 0;
     transition: opacity 0.5s ease 0.3s;
   }
-  .stage-avatar.seated .stage-nameplate { opacity: 1; }
+  .stage-avatar.seated .stage-nameplate { display: none; }
 
   /* ── Main layout ── */
   .app {
@@ -699,7 +699,7 @@ export function getWarRoomHtml(token: string, chatId: string, warroomPort: numbe
 <!-- Boardroom stage: shows the agents assembling around the table, then flying out to the sidebar -->
 <div class="stage" id="stage">
   <div class="stage-beam"></div>
-  <div class="stage-title">Convening Pantheon Automata</div>
+  <div class="stage-title">Convening the Pantheon Automata council</div>
   <div class="table-wrap">
     <div class="table-surface"></div>
     <div class="table-rim"></div>
